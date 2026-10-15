@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Demo Assistente de Voz</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
+  /* ============================================================
+     CORES — so editar aqui
+     ============================================================ */
+  :root {
+    --ink: #0E3A4A;
+    --ink-light: #1F7A8C;
+    --paper: #F5FAFB;
+    --paper-dim: #E3EFF2;
+    --text-dark: #142328;
+    --text-soft: #57696E;
+    --accent: #3CC7A6;
+    --accent-dark: #22A386;
+    --sis-bg: #24262B;
+    --sis-card: #33363D;
+    --sis-text: #ECEDEF;
+    --card: #FFFFFF;
+    --borda: #BFD6DC;
+    --perigo: #E5484D;
+    --radius: 18px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ink: #0F3F50; --ink-light: #1F7A8C; --paper: #141B1D; --paper-dim: #1C2528;
+      --text-dark: #E6EEF0; --text-soft: #9DB0B5; --card: #26333A; --borda: #3C5058;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #0F3F50; --ink-light: #1F7A8C; --paper: #141B1D; --paper-dim: #1C2528;
+    --text-dark: #E6EEF0; --text-soft: #9DB0B5; --card: #26333A; --borda: #3C5058;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: 'Nunito', sans-serif;
+    background: var(--paper);
+    color: var(--text-dark);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 32px;
+  }
+
+  .topo { text-align: center; max-width: 420px; margin-bottom: 18px; }
+  .topo h1 { font-size: 22px; font-weight: 900; margin: 0 0 6px; letter-spacing: -0.3px; }
+  .topo p { font-size: 14px; color: var(--text-soft); margin: 0; line-height: 1.5; }
+
+  .telefone {
+    width: 400px;
+    max-width: 100%;
+    background: var(--ink);
+    border-radius: 32px;
+    padding: 10px;
+    box-shadow: 0 24px 60px rgba(14, 58, 74, 0.28);
+  }
+
+  .tela {
+    background: var(--paper-dim);
+    border-radius: 24px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 680px;
+    max-height: calc(100vh - 140px);
+    min-height: 500px;
+  }
+
+  /* Barra da ligacao */
+  .chamada {
+    background: var(--ink);
+    color: #F5FAFB;
+    padding: 16px 18px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 21px; flex-shrink: 0;
+    transition: box-shadow 0.2s;
+  }
+  .falando .avatar { box-shadow: 0 0 0 6px rgba(60, 199, 166, 0.35); }
+  .info { flex: 1; min-width: 0; }
+  .nome { font-weight: 800; font-size: 15px; }
+  .status { font-size: 12.5px; color: #BFDDE3; }
+  .onda { display: flex; gap: 3px; align-items: center; height: 22px; }
+  .onda span { width: 3px; height: 6px; border-radius: 2px; background: var(--accent); opacity: 0.4; }
+  .falando .onda span { animation: onda 0.9s infinite ease-in-out; opacity: 1; }
+  .onda span:nth-child(2) { animation-delay: 0.1s; }
+  .onda span:nth-child(3) { animation-delay: 0.2s; }
+  .onda span:nth-child(4) { animation-delay: 0.3s; }
+  .onda span:nth-child(5) { animation-delay: 0.4s; }
+  @keyframes onda { 0%, 100% { height: 6px; } 50% { height: 20px; } }
+  .som {
+    background: transparent; border: 1.5px solid #3E6C7C; color: #F5FAFB;
+    border-radius: 10px; padding: 5px 8px; font-size: 15px; cursor: pointer;
+  }
+
+  .corpo {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    scroll-behavior: smooth;
+  }
+  .corpo::-webkit-scrollbar { width: 5px; }
+  .corpo::-webkit-scrollbar-thumb { background: var(--borda); border-radius: 8px; }
+
+  .bolha {
+    max-width: 86%;
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    line-height: 1.48;
+    opacity: 0;
+    transform: translateY(6px);
+    animation: entra 0.32s ease forwards;
+    white-space: pre-line;
+  }
+  @keyframes entra { to { opacity: 1; transform: translateY(0); } }
+
+  .bolha.bot { align-self: flex-start; background: var(--card); border-bottom-left-radius: 5px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+  .bolha.bot::before { content: '🔊 '; }
+  .bolha.user { align-self: flex-end; background: var(--ink-light); color: #fff; border-bottom-right-radius: 5px; }
+  .bolha.user.voz::before { content: '🎤 '; }
+
+  .bolha.bastidor {
+    align-self: stretch; max-width: 100%;
+    background: transparent;
+    border: 1.5px dashed var(--borda);
+    color: var(--text-soft);
+    font-style: italic; font-size: 12.5px;
+    padding: 8px 12px;
+  }
+  .bolha.cena {
+    align-self: center;
+    background: var(--ink); color: #F5FAFB;
+    font-size: 12px; font-weight: 700;
+    padding: 5px 12px; border-radius: 20px;
+  }
+  .bolha.alerta { align-self: stretch; max-width: 100%; background: var(--perigo); color: #fff; font-weight: 800; }
+
+  /* Cartoes: sistema da clinica e WhatsApp do paciente */
+  .sistema {
+    align-self: stretch;
+    background: var(--sis-bg); color: var(--sis-text);
+    border: 1px solid #3A3D44;
+    border-radius: 16px;
+    padding: 10px 12px 12px;
+    font-size: 13.5px; line-height: 1.5;
+    opacity: 0; transform: translateY(6px);
+    animation: entra 0.32s ease forwards;
+  }
+  .sistema.zap { background: #0B3B2E; border-color: #14523F; }
+  .sis-rotulo {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase;
+    color: var(--accent); display: block; margin-bottom: 6px;
+  }
+  .sistema.zap .sis-rotulo { color: #7BE3B4; }
+  .sis-msg { background: var(--sis-card); border-radius: 12px; padding: 9px 12px; white-space: pre-line; }
+  .sistema.zap .sis-msg { background: #145440; }
+  .sis-msg + .sis-msg { margin-top: 6px; }
+
+  .digitando {
+    align-self: flex-start; display: flex; gap: 4px; padding: 12px 15px;
+    background: var(--card); border-radius: var(--radius); border-bottom-left-radius: 5px;
+  }
+  .digitando span { width: 6px; height: 6px; border-radius: 50%; background: #9FB6BC; animation: pulsa 1.1s infinite ease-in-out; }
+  .digitando span:nth-child(2) { animation-delay: 0.15s; }
+  .digitando span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes pulsa { 0%, 60%, 100% { transform: translateY(0); opacity: 0.5; } 30% { transform: translateY(-4px); opacity: 1; } }
+
+  /* Rodape: microfone + sugestoes + campo */
+  .rodape { padding: 12px 14px; background: var(--paper); border-top: 1px solid var(--paper-dim); min-height: 20px; }
+  .dica { font-size: 12px; color: var(--text-soft); margin-bottom: 8px; text-align: center; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 10px; }
+  .chip {
+    background: var(--card); border: 1.5px solid var(--borda); color: var(--text-dark);
+    font-family: inherit; font-size: 13px; font-weight: 700;
+    padding: 7px 12px; border-radius: 20px; cursor: pointer;
+  }
+  .chip:hover, .chip:focus-visible { background: var(--ink); color: #fff; border-color: var(--ink); outline: none; }
+  .acoes { display: flex; gap: 8px; align-items: center; }
+  .mic {
+    flex: 1;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 12px; border-radius: 14px; border: none;
+    background: var(--ink); color: #fff;
+    font-family: inherit; font-weight: 800; font-size: 14.5px; cursor: pointer;
+  }
+  .mic.ouvindo { background: var(--perigo); animation: pulsar 1s infinite; }
+  @keyframes pulsar { 50% { opacity: 0.75; } }
+  .campo-linha { display: flex; gap: 8px; margin-top: 8px; }
+  .campo-linha input {
+    flex: 1; min-width: 0; padding: 10px 14px; border-radius: 20px;
+    border: 1.5px solid var(--borda); font-family: inherit; font-size: 14px;
+    outline: none; background: var(--card); color: var(--text-dark);
+  }
+  .campo-linha input:focus { border-color: var(--ink-light); }
+  .campo-linha button {
+    width: 40px; height: 40px; border-radius: 50%; border: none;
+    background: var(--ink-light); color: #fff; font-size: 15px; cursor: pointer; flex-shrink: 0;
+  }
+
+  .ligar, .cta-final {
+    display: block; width: 100%; padding: 14px; border-radius: 14px; border: none;
+    background: var(--accent); color: #062A22; font-family: inherit; font-weight: 900;
+    font-size: 15.5px; cursor: pointer; text-align: center; text-decoration: none;
+  }
+  .ligar:hover, .cta-final:hover { background: var(--accent-dark); color: #fff; }
+  .desligar { background: var(--perigo); color: #fff; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 17px; cursor: pointer; flex-shrink: 0; }
+  .aviso-demo { text-align: center; font-size: 11.5px; color: var(--text-soft); padding-top: 8px; }
+
+  .legenda { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 14px; font-size: 12px; color: var(--text-soft); }
+  .legenda i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 4px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bolha, .sistema { animation: none; opacity: 1; transform: none; }
+    .digitando span, .falando .onda span, .mic.ouvindo { animation: none; opacity: 1; }
+    .corpo { scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <h1>Assistente de voz para clínica</h1>
+  <p>Ligue para a clínica de exemplo e converse com a assistente. Ela fala, e você responde falando ou tocando nas opções.</p>
+</header>
+
+<div class="telefone">
+  <div class="tela">
+    <div class="chamada" id="chamada">
+      <div class="avatar" aria-hidden="true">🩺</div>
+      <div class="info">
+        <div class="nome" id="nomeClinica"></div>
+        <div class="status" id="status">Assistente de voz · atende 24h</div>
+      </div>
+      <div class="onda" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+      <button class="som" id="som" aria-label="Desligar o som">🔊</button>
+    </div>
+    <div class="corpo" id="corpo" aria-live="polite"></div>
+    <div class="rodape" id="rodape"></div>
+  </div>
+</div>
+
+<div class="legenda" aria-hidden="true">
+  <span><i style="background:#FFFFFF;border:1px solid #BFD6DC"></i>fala da assistente</span>
+  <span><i style="background:#24262B"></i>sistema da clínica</span>
+  <span><i style="background:#0B3B2E"></i>WhatsApp do paciente</span>
+  <span><i style="border:1.5px dashed #BFD6DC"></i>o que acontece por trás</span>
+</div>
+
+<script>
+/* ============================================================
+   CONFIGURACAO — dados ficticios da demo
+   ============================================================ */
+const CONFIG = {
+  nomeClinica: 'Clínica Exemplo',
+  whatsappForwes: '5527981218574',
+  especialidades: ['Clínico geral', 'Dermatologia', 'Pediatria'],
+  horarios: ['quinta às 9h', 'quinta às 14h30', 'sexta às 10h'],
+  convenios: ['Unimed', 'Bradesco Saúde'],
+  valorParticular: 'R$ 250',
+  endereco: 'Rua Exemplo, 100, no Centro',
+};
+
+/* ============================================================
+   Utilidades
+   ============================================================ */
+const espera = ms => new Promise(r => setTimeout(r, ms));
+const norm = t => t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+const tem = (texto, ...palavras) => palavras.some(p => norm(texto).includes(p));
+
+document.getElementById('nomeClinica').textContent = CONFIG.nomeClinica;
+
+const corpo = document.getElementById('corpo');
+const rodape = document.getElementById('rodape');
+const chamada = document.getElementById('chamada');
+const statusEl = document.getElementById('status');
+const paciente = { nome: '', telefone: '', clinica: '' };
+const registro = [];
+let somLigado = true;
+let emLigacao = false;
+let inicioLigacao = 0;
+let relogio = null;
+
+function scrollFim() { corpo.scrollTop = corpo.scrollHeight; }
+function add(el) { corpo.appendChild(el); scrollFim(); return el; }
+function div(classe, texto) {
+  const d = document.createElement('div');
+  d.className = classe;
+  if (texto !== undefined) d.textContent = texto;
+  return d;
+}
+
+/* ---------- Voz da assistente (voz do navegador) ---------- */
+const temVoz = 'speechSynthesis' in window;
+let vozPt = null;
+function escolheVoz() {
+  if (!temVoz) return;
+  const vozes = speechSynthesis.getVoices().filter(v => v.lang && v.lang.replace('_', '-').toLowerCase().startsWith('pt'));
+  vozPt = vozes.find(v => /br/i.test(v.lang) && /google|francisca|natural|luciana/i.test(v.name))
+       || vozes.find(v => /br/i.test(v.lang)) || vozes[0] || null;
+}
+if (temVoz) { escolheVoz(); speechSynthesis.onvoiceschanged = escolheVoz; }
+
+function falaUmaFrase(frase) {
+  return new Promise(resolve => {
+    const tempoLeitura = 900 + frase.length * 55;
+    if (!somLigado || !temVoz) { setTimeout(resolve, Math.min(tempoLeitura, 2600)); return; }
+    const u = new SpeechSynthesisUtterance(frase);
+    u.lang = 'pt-BR';
+    if (vozPt) u.voice = vozPt;
+    u.rate = 1.05;
+    let feito = false;
+    const fim = () => { if (!feito) { feito = true; resolve(); } };
+    u.onend = fim;
+    u.onerror = fim;
+    setTimeout(fim, tempoLeitura + 4000); // alguns navegadores nao avisam o fim
+    speechSynthesis.speak(u);
+  });
+}
+
+async function fala(texto) {
+  const d = add(div('digitando'));
+  d.innerHTML = '<span></span><span></span><span></span>';
+  await espera(350);
+  d.remove();
+  add(div('bolha bot', texto));
+  chamada.classList.add('falando');
+  // frases curtas: o Chrome corta falas longas
+  const frases = texto.replace(/\n+/g, ' ').match(/[^.!?]+[.!?]*/g) || [texto];
+  for (const f of frases) { if (f.trim()) await falaUmaFrase(f.trim()); }
+  chamada.classList.remove('falando');
+}
+
+/* ---------- Ouvido (reconhecimento de voz do navegador) ---------- */
+const Reconhecedor = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+function escutaUmaVez() {
+  return new Promise(resolve => {
+    const r = new Reconhecedor();
+    r.lang = 'pt-BR';
+    r.interimResults = false;
+    r.maxAlternatives = 1;
+    let texto = '';
+    r.onresult = e => { texto = e.results[0][0].transcript; };
+    r.onerror = () => {};
+    r.onend = () => resolve(texto);
+    try { r.start(); } catch { resolve(''); }
+  });
+}
+
+/* Mostra microfone + sugestoes (+ campo de texto opcional) e devolve o que a pessoa disse/tocou */
+function ouve(sugestoes, placeholder) {
+  return new Promise(resolve => {
+    rodape.innerHTML = '';
+    let respondido = false;
+    const responde = (texto, porVoz) => {
+      if (respondido || !texto) return;
+      respondido = true;
+      rodape.innerHTML = '';
+      add(div('bolha user' + (porVoz ? ' voz' : ''), texto));
+      resolve(texto);
+    };
+
+    const dica = div('dica', Reconhecedor
+      ? 'Toque no microfone e fale, ou escolha uma resposta:'
+      : 'Seu navegador não permite falar aqui. Toque numa resposta:');
+    rodape.appendChild(dica);
+
+    if (sugestoes && sugestoes.length) {
+      const chips = div('chips');
+      sugestoes.forEach(s => {
+        const b = document.createElement('button');
+        b.className = 'chip';
+        b.textContent = s;
+        b.onclick = () => responde(s, false);
+        chips.appendChild(b);
+      });
+      rodape.appendChild(chips);
+    }
+
+    const acoes = div('acoes');
+    if (Reconhecedor) {
+      const mic = document.createElement('button');
+      mic.className = 'mic';
+      mic.textContent = '🎤 Toque e fale';
+      mic.onclick = async () => {
+        if (mic.classList.contains('ouvindo')) return;
+        mic.classList.add('ouvindo');
+        mic.textContent = '🎤 Ouvindo... pode falar';
+        const texto = await escutaUmaVez();
+        mic.classList.remove('ouvindo');
+        if (texto) responde(texto, true);
+        else { mic.textContent = '🎤 Não ouvi. Toque e fale de novo'; }
+      };
+      acoes.appendChild(mic);
+    }
+    const desligar = document.createElement('button');
+    desligar.className = 'desligar';
+    desligar.textContent = '📵';
+    desligar.setAttribute('aria-label', 'Desligar a ligação');
+    desligar.onclick = () => responde('(desligou)', false);
+    acoes.appendChild(desligar);
+    rodape.appendChild(acoes);
+
+    if (placeholder) {
+      const linha = div('campo-linha');
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = placeholder;
+      input.setAttribute('aria-label', placeholder);
+      input.autocomplete = 'off';
+      const btn = document.createElement('button');
+      btn.textContent = '➤';
+      btn.setAttribute('aria-label', 'Enviar');
+      const enviar = () => { const v = input.value.trim(); if (v) responde(v, false); else input.focus(); };
+      btn.onclick = enviar;
+      input.onkeydown = e => { if (e.key === 'Enter') enviar(); };
+      linha.append(input, btn);
+      rodape.appendChild(linha);
+    }
+    scrollFim();
+  });
+}
+
+function digita(placeholder) {
+  return new Promise(resolve => {
+    rodape.innerHTML = '';
+    const linha = div('campo-linha');
+    linha.style.marginTop = '0';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = placeholder;
+    input.setAttribute('aria-label', placeholder);
+    input.autocomplete = 'off';
+    const btn = document.createElement('button');
+    btn.textContent = '➤';
+    btn.setAttribute('aria-label', 'Enviar');
+    const enviar = () => {
+      const v = input.value.trim();
+      if (!v) { input.focus(); return; }
+      rodape.innerHTML = '';
+      add(div('bolha user', v));
+      resolve(v);
+    };
+    btn.onclick = enviar;
+    input.onkeydown = e => { if (e.key === 'Enter') enviar(); };
+    linha.append(input, btn);
+    rodape.appendChild(linha);
+    input.focus();
+  });
+}
+
+async function bastidor(texto) { await espera(300); add(div('bolha bastidor', '🔍 ' + texto)); await espera(250); }
+async function cena(texto) { await espera(350); add(div('bolha cena', texto)); await espera(450); }
+
+async function cartao(rotulo, mensagens, zap) {
+  await espera(400);
+  const c = div('sistema' + (zap ? ' zap' : ''));
+  const r = document.createElement('span');
+  r.className = 'sis-rotulo';
+  r.textContent = rotulo;
+  c.appendChild(r);
+  mensagens.forEach(m => c.appendChild(div('sis-msg', m)));
+  add(c);
+}
+
+const DESLIGOU = t => t === '(desligou)';
+
+function limpaNome(texto) {
+  const t = norm(texto).replace(/\b(meu nome e|me chamo|aqui e|aqui quem fala e|sou o|sou a|eu sou|e o|e a|oi|ola|bom dia|boa tarde|boa noite)\b/g, ' ');
+  const original = texto.trim().split(/\s+/);
+  const alvo = t.trim().split(/\s+/)[0] || '';
+  const achado = original.find(p => norm(p).replace(/[^a-z'-]/g, '') === alvo.replace(/[^a-z'-]/g, '')) || alvo;
+  const limpo = achado.replace(/[^\p{L}'-]/gu, '').slice(0, 20);
+  return limpo ? limpo.charAt(0).toUpperCase() + limpo.slice(1).toLowerCase() : 'Paciente';
+}
+
+/* ============================================================
+   ROTEIRO DA LIGACAO
+   ============================================================ */
+
+function qualHorario(t) {
+  if (tem(t, 'sexta', '10', 'dez', 'ultim', 'terceir')) return 2;
+  if (tem(t, '14', 'duas', 'catorze', 'quatorze', 'tarde', 'segund')) return 1;
+  if (tem(t, '9', 'nove', 'manha', 'primeir', 'quinta')) return 0;
+  return -1;
+}
+
+function qualEspecialidade(t) {
+  if (tem(t, 'derm', 'pele')) return 1;
+  if (tem(t, 'pedi', 'crianca', 'filho', 'filha')) return 2;
+  if (tem(t, 'clinic', 'geral', 'medico')) return 0;
+  return -1;
+}
+
+async function pergunta(texto, sugestoes, entende, placeholder) {
+  await fala(texto);
+  for (let tentativa = 0; ; tentativa++) {
+    const r = await ouve(sugestoes, placeholder);
+    if (DESLIGOU(r)) return null;
+    const v = entende(r);
+    if (v !== -1 && v !== null && v !== undefined) return v;
+    await fala(tentativa === 0
+      ? 'Desculpa, não entendi direito. Pode repetir?'
+      : `Você pode dizer, por exemplo: ${sugestoes.slice(0, 2).join(' ou ')}.`);
+  }
+}
+
+const simOuNao = t => tem(t, 'nao', 'errad', 'mudar', 'outro') ? 'nao'
+  : tem(t, 'sim', 'isso', 'pode', 'confirm', 'certo', 'ok', 'perfeito', 'claro', 'quero') ? 'sim' : -1;
+
+async function convenioOuParticular() {
+  const tipo = await pergunta('A consulta vai ser particular ou pelo convênio?',
+    ['Particular', 'Unimed', 'Outro convênio'],
+    t => tem(t, 'particular') ? 'particular'
+      : tem(t, 'unimed') ? 'Unimed' : tem(t, 'bradesco') ? 'Bradesco Saúde'
+      : tem(t, 'conveni', 'plano', 'amil', 'sulamerica', 'hapvida', 'outro') ? 'outro' : -1);
+  if (tipo === null) return null;
+  if (tipo !== 'outro') return tipo;
+  await fala(`Hoje a clínica atende ${CONFIG.convenios.join(' e ')}. Esse convênio ainda não está na lista. Posso marcar particular, por ${CONFIG.valorParticular}. Pode ser?`);
+  const r = await ouve(['Pode ser', 'Não, obrigado']);
+  if (DESLIGOU(r)) return null;
+  return simOuNao(r) === 'sim' ? 'particular' : 'desistiu';
+}
+
+async function agendar() {
+  const esp = await pergunta('Claro! Para qual especialidade? Temos clínico geral, dermatologia e pediatria.',
+    CONFIG.especialidades, qualEspecialidade);
+  if (esp === null) return false;
+  const especialidade = CONFIG.especialidades[esp];
+  const h = await pergunta(`Para ${especialidade.toLowerCase()}, tenho ${CONFIG.horarios[0]}, ${CONFIG.horarios[1]} ou ${CONFIG.horarios[2]}. Qual fica melhor?`,
+    ['Quinta às 9h', 'Quinta às 14h30', 'Sexta às 10h'], qualHorario);
+  if (h === null) return false;
+  const horario = CONFIG.horarios[h];
+  const pagamento = await convenioOuParticular();
+  if (pagamento === null) return false;
+  if (pagamento === 'desistiu') {
+    await fala('Tudo bem! Vou pedir para a recepção te ligar para ver outra opção.');
+    await cartao('🖥️ Sistema da clínica', [`📞 Retornar ligação: ${paciente.nome}\nQueria ${especialidade.toLowerCase()}, convênio fora da lista.`]);
+    registro.push('Pediu retorno da recepção (convênio)');
+    return true;
+  }
+  const r = await pergunta(`Então fica assim: ${especialidade.toLowerCase()}, ${horario}, ${pagamento === 'particular' ? 'particular' : 'com convênio ' + pagamento}. Posso confirmar?`,
+    ['Sim, pode confirmar', 'Não, quero mudar'], simOuNao);
+  if (r === null) return false;
+  if (r === 'nao') {
+    await fala('Sem problema, vamos de novo.');
+    return agendar();
+  }
+  await fala(`Prontinho, ${paciente.nome}! Sua consulta está marcada. Vou te mandar a confirmação pelo WhatsApp agora.`);
+  await cartao('🖥️ Agenda da clínica', [`✅ Nova consulta (marcada pela assistente de voz)\n${paciente.nome} · ${especialidade}\n${horario} · ${pagamento === 'particular' ? 'Particular' : pagamento}`]);
+  await cartao('💬 WhatsApp do paciente', [`${CONFIG.nomeClinica}: Olá, ${paciente.nome}! Sua consulta de ${especialidade.toLowerCase()} está confirmada para ${horario}.\n📍 ${CONFIG.endereco}`], true);
+  await bastidor('a consulta entra direto na agenda que a clínica já usa. Ninguém da recepção precisou atender o telefone.');
+  registro.push(`Marcou ${especialidade.toLowerCase()}, ${horario}`);
+  paciente.consulta = `${especialidade.toLowerCase()} de ${horario}`;
+  return true;
+}
+
+async function remarcarOuCancelar(acaoInicial) {
+  const atual = paciente.consulta || 'clínico geral de terça às 15h';
+  let acao = acaoInicial;
+  if (!acao) {
+    acao = await pergunta(`Encontrei a sua consulta de ${atual}. Você quer remarcar ou cancelar?`,
+      ['Remarcar', 'Cancelar'], t => tem(t, 'remarc', 'mudar', 'trocar', 'outro dia') ? 'remarcar' : tem(t, 'cancel', 'desmarc') ? 'cancelar' : -1);
+    if (acao === null) return false;
+  } else {
+    await fala(`Encontrei a sua consulta de ${atual}.`);
+  }
+  if (acao === 'cancelar') {
+    await fala('Pronto, consulta cancelada. Obrigada por avisar com antecedência!');
+    await cartao('🖥️ Agenda da clínica', [`❌ Cancelada: ${paciente.nome} · ${atual}\n🔁 Horário liberado. Avisando a lista de espera pelo WhatsApp.`]);
+    await bastidor('o horário volta para a agenda na hora, e quem está na lista de espera é avisado. A clínica não perde a vaga.');
+    registro.push('Cancelou consulta (vaga oferecida à lista de espera)');
+    paciente.consulta = '';
+    return true;
+  }
+  const h = await pergunta(`Claro! Tenho ${CONFIG.horarios.join(', ')}. Qual prefere?`,
+    ['Quinta às 9h', 'Quinta às 14h30', 'Sexta às 10h'], qualHorario);
+  if (h === null) return false;
+  await fala(`Feito! Sua consulta passou para ${CONFIG.horarios[h]}. A confirmação vai pelo WhatsApp.`);
+  await cartao('🖥️ Agenda da clínica', [`🔄 Remarcada: ${paciente.nome}\nDe: ${atual}\nPara: ${CONFIG.horarios[h]}`]);
+  registro.push(`Remarcou para ${CONFIG.horarios[h]}`);
+  paciente.consulta = paciente.consulta ? paciente.consulta.replace(/de .*$/, 'de ' + CONFIG.horarios[h]) : `clínico geral de ${CONFIG.horarios[h]}`;
+  return true;
+}
+
+function respostaDuvida(t) {
+  if (tem(t, 'peito', 'falta de ar', 'desmai', 'sangr', 'emergenc', 'urgen', 'infart', 'convuls', 'nao consigo respirar'))
+    return { urgencia: true };
+  if (tem(t, 'endereco', 'onde fica', 'localiza', 'onde e', 'chegar'))
+    return { texto: `Ficamos na ${CONFIG.endereco}. Quer que eu mande a localização no seu WhatsApp?`, tema: 'endereço' };
+  if (tem(t, 'conveni', 'plano', 'unimed', 'bradesco'))
+    return { texto: `Atendemos ${CONFIG.convenios.join(' e ')}. A consulta particular custa ${CONFIG.valorParticular}.`, tema: 'convênio' };
+  if (tem(t, 'valor', 'preco', 'quanto', 'custa', 'particular'))
+    return { texto: `A consulta particular custa ${CONFIG.valorParticular}, e pode pagar no Pix ou no cartão.`, tema: 'valor' };
+  if (tem(t, 'horario', 'abre', 'fecha', 'funciona', 'sabado'))
+    return { texto: 'A clínica atende de segunda a sexta, das 7h às 19h, e sábado até meio-dia. Eu atendo 24 horas.', tema: 'horário' };
+  if (tem(t, 'exame', 'resultado'))
+    return { texto: 'Os resultados ficam prontos em até 3 dias úteis e chegam no seu WhatsApp.', tema: 'exames' };
+  return null;
+}
+
+async function duvida(textoJaDito) {
+  let t = textoJaDito;
+  if (!t) {
+    await fala('Pode perguntar!');
+    t = await ouve(['Qual o endereço?', 'Aceita convênio?', 'Quanto custa a consulta?', 'Estou com dor no peito']);
+    if (DESLIGOU(t)) return false;
+  }
+  const r = respostaDuvida(t);
+  if (r && r.urgencia) {
+    add(div('bolha alerta', '🚨 Possível emergência'));
+    await fala(`${paciente.nome}, isso pode ser uma emergência. Desligue e ligue agora para o 192, o SAMU, ou vá ao pronto-socorro mais próximo. Já avisei a equipe da clínica.`);
+    await cartao('🖥️ Sistema da clínica', [`🚨 URGENTE: ${paciente.nome} relatou sintoma de emergência na ligação.\nRecebeu orientação para ligar 192. Retornar assim que possível.`]);
+    await bastidor('a assistente não dá diagnóstico nem receita. Palavras de urgência fazem ela orientar o SAMU na hora e avisar a equipe.');
+    registro.push('Sintoma de urgência: orientado 192 e equipe avisada');
+    return true;
+  }
+  if (r) {
+    await fala(r.texto);
+    await bastidor('as respostas vêm das informações que a própria clínica cadastrou. A assistente não inventa nada.');
+    registro.push(`Tirou dúvida: ${r.tema}`);
+    return true;
+  }
+  await fala('Essa eu prefiro confirmar com a equipe, para não te passar informação errada. A recepção vai te retornar ainda hoje.');
+  await cartao('🖥️ Sistema da clínica', [`📞 Retornar ligação: ${paciente.nome}\nPergunta: "${t}"`]);
+  await bastidor('o que a assistente não sabe com segurança vira um recado anotado para a recepção, com a pergunta exata.');
+  registro.push('Dúvida encaminhada à recepção');
+  return true;
+}
+
+function intencao(t) {
+  if (tem(t, 'remarc', 'mudar', 'trocar')) return 'remarcar';
+  if (tem(t, 'cancel', 'desmarc')) return 'cancelar';
+  if (tem(t, 'marcar', 'agend', 'consulta', 'horario com', 'medico')) return 'agendar';
+  if (respostaDuvida(t) || tem(t, 'duvida', 'pergunt', 'saber', 'informa')) return 'duvida';
+  if (tem(t, 'nao', 'so isso', 'obrigad', 'tchau', 'nada', 'era isso')) return 'fim';
+  return -1;
+}
+
+async function atende() {
+  await fala(`Posso te ajudar a marcar uma consulta, remarcar ou cancelar, ou tirar uma dúvida. O que você precisa?`);
+  let primeira = true;
+  while (true) {
+    const sugestoes = ['Quero marcar uma consulta', 'Preciso remarcar', 'Quero cancelar', 'Tenho uma dúvida'];
+    if (!primeira) sugestoes.push('Não, só isso');
+    const t = await ouve(sugestoes);
+    if (DESLIGOU(t)) return;
+    const i = intencao(t);
+    if (i === -1) { await fala('Desculpa, não entendi. Você quer marcar, remarcar, cancelar ou tirar uma dúvida?'); continue; }
+    if (i === 'fim') {
+      if (primeira) { await fala('Tudo bem! Se precisar, é só ligar de novo.'); return; }
+      return;
+    }
+    let ok;
+    if (i === 'agendar') ok = await agendar();
+    else if (i === 'remarcar') ok = await remarcarOuCancelar('remarcar');
+    else if (i === 'cancelar') ok = await remarcarOuCancelar('cancelar');
+    else ok = await duvida(respostaDuvida(t) ? t : null);
+    if (!ok) return;
+    primeira = false;
+    await fala('Posso te ajudar em mais alguma coisa?');
+  }
+}
+
+/* ============================================================
+   Ligar / desligar
+   ============================================================ */
+function atualizaRelogio() {
+  const s = Math.floor((Date.now() - inicioLigacao) / 1000);
+  statusEl.textContent = `Em ligação · ${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+}
+
+async function ligar() {
+  rodape.innerHTML = '';
+  // desbloqueia a voz no iPhone/Chrome: precisa nascer de um toque
+  if (temVoz) { speechSynthesis.cancel(); speechSynthesis.speak(new SpeechSynthesisUtterance('')); }
+  statusEl.textContent = 'Chamando...';
+  await cena('📞 Chamando a Clínica Exemplo...');
+  await espera(1200);
+  emLigacao = true;
+  inicioLigacao = Date.now();
+  relogio = setInterval(atualizaRelogio, 1000);
+  atualizaRelogio();
+
+  await fala(`${CONFIG.nomeClinica}, olá! Aqui é a assistente virtual. Com quem eu falo?`);
+  const n = await ouve(['Ana', 'Carlos', 'Mariana'], 'Ou digite seu nome');
+  if (DESLIGOU(n)) return encerrar();
+  paciente.nome = limpaNome(n);
+  await fala(`Prazer, ${paciente.nome}!`);
+  await atende();
+  await encerrar();
+}
+
+async function encerrar() {
+  if (temVoz) speechSynthesis.cancel();
+  if (emLigacao) {
+    const s = Math.floor((Date.now() - inicioLigacao) / 1000);
+    if (paciente.nome) await fala(`Obrigada pela ligação, ${paciente.nome}. Tenha um ótimo dia!`);
+    clearInterval(relogio);
+    emLigacao = false;
+    statusEl.textContent = 'Ligação encerrada';
+    await cena(`📵 Ligação encerrada · ${Math.max(1, Math.round(s / 60))} min`);
+    await cartao('🖥️ Resumo enviado à recepção', [
+      `📞 Ligação de ${paciente.nome || 'paciente'}\n` + (registro.length ? registro.map(r => '• ' + r).join('\n') : '• Só tirou dúvidas rápidas'),
+    ]);
+    await bastidor('toda ligação vira um resumo por escrito. A recepção sabe o que aconteceu sem ouvir gravação.');
+  }
+
+  if (paciente.consulta) {
+    await cena('⏩ 1 dia antes da consulta');
+    await cartao('💬 WhatsApp do paciente', [`${CONFIG.nomeClinica}: Oi, ${paciente.nome}! Lembrete: sua consulta de ${paciente.consulta} é amanhã.\nResponda 1 para confirmar ou 2 para remarcar.`], true);
+    await bastidor('o lembrete automático reduz muito as faltas sem aviso, e a recepção não precisa ligar para ninguém.');
+  }
+
+  await cena('O que a assistente faz pela clínica');
+  await bastidor('atende todas as ligações ao mesmo tempo, no horário de pico, à noite e no fim de semana. Nenhuma ligação cai.');
+  await bastidor('na versão para a sua clínica, a voz é natural, bem mais humana que esta voz do navegador, e usa a sua agenda, os seus convênios e os seus preços.');
+  await fala('Quer ver isso atendendo na sua clínica? Me diz o nome dela aqui embaixo.');
+  paciente.clinica = await digita('Nome da sua clínica ou consultório');
+  await fala('E qual o melhor WhatsApp para a gente conversar?');
+  let tel = await digita('Seu WhatsApp com DDD');
+  while (tel.replace(/\D/g, '').length < 10) {
+    await fala('Não consegui ler o número. Confere se está com DDD?');
+    tel = await digita('Ex: 27 99999-9999');
+  }
+  paciente.telefone = tel;
+  await fala('Perfeito! Toque no botão abaixo para falar com a Forwes.');
+
+  rodape.innerHTML = '';
+  const btn = document.createElement('a');
+  btn.className = 'cta-final';
+  btn.textContent = '💬 Quero na minha clínica';
+  const msg = `Olá! Testei a demo da assistente de voz para clínica e quero saber mais.\nNome: ${paciente.nome || '-'}\nClínica: ${paciente.clinica}\nWhatsApp: ${paciente.telefone}`;
+  btn.href = `https://wa.me/${CONFIG.whatsappForwes}?text=${encodeURIComponent(msg)}`;
+  btn.target = '_blank';
+  btn.rel = 'noopener';
+  rodape.append(btn, div('aviso-demo', 'Demonstração Forwes: clínica, horários e preços são fictícios. Nada é gravado pela Forwes. O reconhecimento da sua fala é feito pelo próprio navegador.'));
+}
+
+/* ---------- Tela inicial ---------- */
+document.getElementById('som').onclick = e => {
+  somLigado = !somLigado;
+  e.currentTarget.textContent = somLigado ? '🔊' : '🔇';
+  e.currentTarget.setAttribute('aria-label', somLigado ? 'Desligar o som' : 'Ligar o som');
+  if (!somLigado && temVoz) speechSynthesis.cancel();
+};
+
+(function inicio() {
+  add(div('bolha bastidor', '🔍 Aumente o volume. A assistente vai falar com você. Quando for a sua vez, toque no microfone e responda falando, ou toque numa das respostas prontas.'));
+  const b = document.createElement('button');
+  b.className = 'ligar';
+  b.textContent = '📞 Ligar para a clínica';
+  b.onclick = ligar;
+  rodape.appendChild(b);
+})();
+</script>
+
+</body>
+</html>
