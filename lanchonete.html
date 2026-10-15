@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Demo Clientes de Volta</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
+  /* ============================================================
+     CORES — so editar aqui
+     ============================================================ */
+  :root {
+    --ink: #3A1F1A;
+    --ink-light: #B23A26;
+    --paper: #FFF9EF;
+    --paper-dim: #F6EAD3;
+    --text-dark: #22191A;
+    --text-soft: #6B5E58;
+    --accent: #F2B21B;
+    --accent-dark: #C98E05;
+    --dono-bg: #24262B;
+    --dono-card: #33363D;
+    --dono-text: #ECEDEF;
+    --card: #FFFFFF;
+    --borda: #DCCBA8;
+    --radius: 18px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ink: #4A2620; --ink-light: #A8382A; --paper: #1C1A19; --paper-dim: #262321;
+      --text-dark: #EFEAE6; --text-soft: #ACA29C; --card: #322D2B; --borda: #4D4642;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #4A2620; --ink-light: #A8382A; --paper: #1C1A19; --paper-dim: #262321;
+    --text-dark: #EFEAE6; --text-soft: #ACA29C; --card: #322D2B; --borda: #4D4642;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: 'Nunito', sans-serif;
+    background: var(--paper);
+    color: var(--text-dark);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 32px;
+  }
+
+  .topo { text-align: center; max-width: 420px; margin-bottom: 18px; }
+  .topo h1 { font-size: 22px; font-weight: 900; color: var(--text-dark); margin: 0 0 6px; letter-spacing: -0.3px; }
+  .topo p { font-size: 14px; color: var(--text-soft); margin: 0; line-height: 1.5; }
+
+  .telefone {
+    width: 400px;
+    max-width: 100%;
+    background: var(--ink);
+    border-radius: 32px;
+    padding: 10px;
+    box-shadow: 0 24px 60px rgba(58, 31, 26, 0.28);
+  }
+
+  .tela {
+    background: var(--paper-dim);
+    border-radius: 24px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 660px;
+    max-height: calc(100vh - 140px);
+    min-height: 480px;
+  }
+
+  .cabecalho {
+    background: var(--ink);
+    color: #FFF9EF;
+    padding: 16px 20px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 19px; flex-shrink: 0;
+  }
+
+  .nome { font-weight: 800; font-size: 15px; }
+  .status { font-size: 12px; color: #E9CFC6; display: flex; align-items: center; gap: 5px; }
+  .ponto { width: 6px; height: 6px; border-radius: 50%; background: #6FE0A8; }
+
+  .corpo {
+    flex: 1;
+    overflow-y: auto;
+    padding: 18px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    scroll-behavior: smooth;
+  }
+  .corpo::-webkit-scrollbar { width: 5px; }
+  .corpo::-webkit-scrollbar-thumb { background: var(--borda); border-radius: 8px; }
+
+  .bolha {
+    max-width: 84%;
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    line-height: 1.48;
+    opacity: 0;
+    transform: translateY(6px);
+    animation: entra 0.32s ease forwards;
+    white-space: pre-line;
+  }
+  @keyframes entra { to { opacity: 1; transform: translateY(0); } }
+
+  .bolha.bot { align-self: flex-start; background: var(--card); color: var(--text-dark); border-bottom-left-radius: 5px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+  .bolha.user { align-self: flex-end; background: var(--ink-light); color: #fff; border-bottom-right-radius: 5px; }
+
+  .bolha.bastidor {
+    align-self: stretch;
+    max-width: 100%;
+    background: transparent;
+    border: 1.5px dashed var(--borda);
+    color: var(--text-soft);
+    font-style: italic;
+    font-size: 12.5px;
+    padding: 8px 12px;
+  }
+
+  .bolha.cena {
+    align-self: center;
+    background: var(--ink);
+    color: #FFF9EF;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 20px;
+  }
+
+  .bolha.resumo {
+    align-self: flex-start;
+    background: var(--card);
+    border: 1.5px solid var(--paper-dim);
+    font-size: 13.5px;
+    line-height: 1.65;
+    border-bottom-left-radius: 5px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  }
+  .resumo-titulo { font-weight: 900; color: var(--ink-light); display: block; margin-bottom: 3px; }
+  .linha-total { font-weight: 900; border-top: 1px dashed var(--borda); margin-top: 4px; padding-top: 4px; }
+  .desconto { color: #2E8B57; font-weight: 700; }
+
+  /* Celular do dono */
+  .dono {
+    align-self: stretch;
+    background: var(--dono-bg);
+    color: var(--dono-text);
+    border: 1px solid #3A3D44;
+    border-radius: 16px;
+    padding: 10px 12px 12px;
+    font-size: 13.5px;
+    line-height: 1.5;
+    opacity: 0;
+    transform: translateY(6px);
+    animation: entra 0.32s ease forwards;
+  }
+  .dono-rotulo {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase;
+    color: var(--accent); display: block; margin-bottom: 6px;
+  }
+  .dono-msg { background: var(--dono-card); border-radius: 12px; padding: 9px 12px; white-space: pre-line; }
+  .dono-msg + .dono-msg { margin-top: 6px; }
+  .dono-msg.resposta { background: #6B2A20; margin-left: auto; width: fit-content; max-width: 85%; }
+  .dono .opcoes { margin-top: 8px; max-width: 100%; }
+  .dono .opcao-btn { background: var(--dono-card); color: #fff; border-color: #4A4E57; }
+  .dono .opcao-btn:hover, .dono .opcao-btn:focus-visible { background: var(--accent); border-color: var(--accent); color: #2B1B00; }
+
+  /* Relatorio */
+  .rel-titulo { font-weight: 900; font-size: 14.5px; margin-bottom: 2px; }
+  .rel-sub { font-size: 12px; color: #B8BBC2; margin-bottom: 8px; }
+  .destaques { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+  .destaque { background: #2A2C31; border-radius: 10px; padding: 8px 10px; }
+  .destaque b { display: block; font-size: 18px; font-weight: 900; color: var(--accent); }
+  .destaque span { font-size: 11.5px; color: #C9CBD1; }
+  .secao { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #B8BBC2; margin: 10px 0 5px; }
+  .barra { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+  .barra span:first-child { width: 112px; flex-shrink: 0; font-size: 12.5px; }
+  .barra .trilho { flex: 1; height: 9px; border-radius: 5px; background: #2A2C31; overflow: hidden; }
+  .barra .cheio { height: 100%; border-radius: 5px; background: var(--accent); }
+  .barra span:last-child { width: 30px; text-align: right; font-size: 12px; color: #C9CBD1; }
+  .lista-rel { margin: 0; padding-left: 18px; font-size: 12.5px; }
+  .lista-rel li { margin: 2px 0; }
+
+  .digitando {
+    align-self: flex-start; display: flex; gap: 4px; padding: 12px 15px;
+    background: var(--card); border-radius: var(--radius); border-bottom-left-radius: 5px;
+  }
+  .digitando span { width: 6px; height: 6px; border-radius: 50%; background: #B9B0A0; animation: pulsa 1.1s infinite ease-in-out; }
+  .digitando span:nth-child(2) { animation-delay: 0.15s; }
+  .digitando span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes pulsa { 0%, 60%, 100% { transform: translateY(0); opacity: 0.5; } 30% { transform: translateY(-4px); opacity: 1; } }
+
+  .opcoes {
+    display: flex; flex-direction: column; gap: 7px;
+    align-self: flex-start; max-width: 90%;
+    opacity: 0; animation: entra 0.32s ease forwards;
+  }
+  .opcao-btn {
+    background: var(--card);
+    border: 1.5px solid var(--paper-dim);
+    color: var(--text-dark);
+    font-family: inherit; font-size: 13.5px; font-weight: 700;
+    padding: 10px 14px; border-radius: 12px;
+    text-align: left; cursor: pointer; transition: all 0.15s;
+  }
+  .opcao-btn:hover, .opcao-btn:focus-visible { background: var(--ink); color: #fff; border-color: var(--ink); outline: none; }
+
+  .rodape { padding: 12px 14px; background: var(--paper); border-top: 1px solid var(--paper-dim); min-height: 20px; }
+
+  .campo-linha { display: flex; gap: 8px; opacity: 0; animation: entra 0.3s ease forwards; }
+  .campo-linha input {
+    flex: 1; min-width: 0; padding: 11px 14px; border-radius: 20px;
+    border: 1.5px solid var(--paper-dim); font-family: inherit; font-size: 14px;
+    outline: none; background: var(--card); color: var(--text-dark);
+  }
+  .campo-linha input:focus { border-color: var(--ink-light); }
+  .campo-linha button {
+    width: 42px; height: 42px; border-radius: 50%; border: none;
+    background: var(--ink); color: #fff; font-size: 16px; cursor: pointer; flex-shrink: 0;
+  }
+
+  .cta-final {
+    display: block; width: 100%; padding: 13px; border-radius: 14px; border: none;
+    background: var(--accent); color: #2B1B00; font-family: inherit; font-weight: 900;
+    font-size: 15px; cursor: pointer; text-align: center; text-decoration: none;
+  }
+  .cta-final:hover { background: var(--accent-dark); color: #fff; }
+  .aviso-demo { text-align: center; font-size: 11.5px; color: var(--text-soft); padding-top: 8px; }
+
+  .legenda { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 14px; font-size: 12px; color: var(--text-soft); }
+  .legenda i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 4px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bolha, .opcoes, .campo-linha, .dono { animation: none; opacity: 1; transform: none; }
+    .digitando span { animation: none; opacity: 1; }
+    .corpo { scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <h1>Clientes de volta, no automático</h1>
+  <p>Todo mês, do dia 5 ao 10, o agente chama quem sumiu da sua lanchonete. Você não toca em nada.</p>
+</header>
+
+<div class="telefone">
+  <div class="tela">
+    <div class="cabecalho">
+      <div class="avatar" aria-hidden="true">🍔</div>
+      <div>
+        <div class="nome" id="nomeLoja"></div>
+        <div class="status"><span class="ponto"></span> online agora</div>
+      </div>
+    </div>
+    <div class="corpo" id="corpo" aria-live="polite"></div>
+    <div class="rodape" id="rodape"></div>
+  </div>
+</div>
+
+<div class="legenda" aria-hidden="true">
+  <span><i style="background:#FFFFFF;border:1px solid #DCCBA8"></i>mensagem do agente</span>
+  <span><i style="background:#24262B"></i>celular do dono</span>
+  <span><i style="border:1.5px dashed #DCCBA8"></i>o que acontece por trás</span>
+</div>
+
+<script>
+/* ============================================================
+   CONFIGURACAO — dados ficticios da demo
+   ============================================================ */
+const CONFIG = {
+  nomeLoja: 'Lanchonete Exemplo',
+  whatsappForwes: '5527981218574',
+  diasSemPedir: 20,
+  cupom: 'VOLTA20',
+  descontoPct: 20,
+  taxaEntrega: 6,
+  lanches: [
+    { nome: 'X-Bacon',          emoji: '🍔', preco: 32.90 },
+    { nome: 'X-Salada',         emoji: '🍔', preco: 26.90 },
+    { nome: 'Cachorro-quente',  emoji: '🌭', preco: 18.90 },
+    { nome: 'Pastel de carne',  emoji: '🥟', preco: 14.90 },
+  ],
+};
+
+const reais = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const espera = ms => new Promise(r => setTimeout(r, ms));
+
+document.getElementById('nomeLoja').textContent = CONFIG.nomeLoja;
+
+const corpo = document.getElementById('corpo');
+const rodape = document.getElementById('rodape');
+const lead = { nome: '', favorito: null, telefone: '', loja: '' };
+let numeroPedido = 214;
+
+function scrollFim() { corpo.scrollTop = corpo.scrollHeight; }
+function add(el) { corpo.appendChild(el); scrollFim(); return el; }
+
+function div(classe, texto) {
+  const d = document.createElement('div');
+  d.className = classe;
+  if (texto !== undefined) d.textContent = texto;
+  return d;
+}
+
+async function digitando(ms) {
+  const d = add(div('digitando'));
+  d.innerHTML = '<span></span><span></span><span></span>';
+  await espera(ms);
+  d.remove();
+}
+
+async function bot(texto) {
+  await digitando(600 + Math.random() * 350);
+  add(div('bolha bot', texto));
+}
+
+function user(texto) { add(div('bolha user', texto)); }
+
+async function bastidor(texto) {
+  await espera(350);
+  add(div('bolha bastidor', '🔍 ' + texto));
+  await espera(250);
+}
+
+async function cena(texto) {
+  await espera(400);
+  add(div('bolha cena', texto));
+  await espera(500);
+}
+
+async function resumo(titulo, linhas, total) {
+  await digitando(700);
+  const b = div('bolha resumo');
+  const t = document.createElement('span');
+  t.className = 'resumo-titulo';
+  t.textContent = titulo;
+  b.appendChild(t);
+  linhas.forEach(l => {
+    const s = document.createElement('span');
+    s.style.display = 'block';
+    if (l.startsWith('🎟️')) s.className = 'desconto';
+    s.textContent = l;
+    b.appendChild(s);
+  });
+  if (total) { const s = document.createElement('span'); s.style.display = 'block'; s.className = 'linha-total'; s.textContent = total; b.appendChild(s); }
+  add(b);
+}
+
+/* Bloco do celular do dono: mensagens + botoes opcionais (o visitante responde como dono) */
+async function dono(mensagens, botoes) {
+  await espera(500);
+  const card = div('dono');
+  const rot = document.createElement('span');
+  rot.className = 'dono-rotulo';
+  rot.textContent = '📲 No celular do dono';
+  card.appendChild(rot);
+  mensagens.forEach(m => card.appendChild(typeof m === 'string' ? div('dono-msg', m) : m));
+  add(card);
+  if (!botoes) return null;
+  const escolha = await escolhe(botoes, card);
+  card.appendChild(div('dono-msg resposta', escolha));
+  scrollFim();
+  return escolha;
+}
+
+function escolhe(opcoes, dentro) {
+  return new Promise(resolve => {
+    const wrap = div('opcoes');
+    opcoes.forEach(op => {
+      const btn = document.createElement('button');
+      btn.className = 'opcao-btn';
+      btn.textContent = op;
+      btn.onclick = () => {
+        wrap.remove();
+        if (!dentro) user(op);
+        resolve(op);
+      };
+      wrap.appendChild(btn);
+    });
+    (dentro || corpo).appendChild(wrap);
+    scrollFim();
+    wrap.querySelector('button').focus({ preventScroll: true });
+  });
+}
+
+function digita(placeholder) {
+  return new Promise(resolve => {
+    rodape.innerHTML = '';
+    const linha = div('campo-linha');
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = placeholder;
+    input.setAttribute('aria-label', placeholder);
+    input.autocomplete = 'off';
+    const btn = document.createElement('button');
+    btn.textContent = '➤';
+    btn.setAttribute('aria-label', 'Enviar');
+    function enviar() {
+      const valor = input.value.trim();
+      if (!valor) { input.focus(); return; }
+      linha.remove();
+      user(valor);
+      resolve(valor);
+    }
+    btn.onclick = enviar;
+    input.onkeydown = e => { if (e.key === 'Enter') enviar(); };
+    linha.append(input, btn);
+    rodape.appendChild(linha);
+    input.focus();
+  });
+}
+
+function primeiroNome(bruto) {
+  const p = bruto.trim().split(/\s+/)[0].replace(/[^\p{L}'-]/gu, '').slice(0, 20) || 'Amigo';
+  return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+}
+
+const precoPromo = () => lead.favorito.preco * (1 - CONFIG.descontoPct / 100);
+
+/* ============================================================
+   ROTEIROS
+   ============================================================ */
+
+async function roteiroMesInteiro() {
+  await cena('📅 Dia 1 a 4 do mês');
+  await bastidor('o agente só observa. Cada pedido que chega pelo WhatsApp é anotado sozinho: quem pediu, o quê e quando. Ninguém preenche planilha.');
+  await cena('📅 Dia 5, 9h da manhã');
+  await bastidor(`o agente procura quem não pede há mais de ${CONFIG.diasSemPedir} dias e descobre o lanche favorito de cada um, pelo histórico.`);
+  await dono([`🔁 Campanha "Clientes de volta" começou hoje.\n\n63 clientes estão há mais de ${CONFIG.diasSemPedir} dias sem pedir.\nVou chamar todos até o dia 10, aos poucos, com o cupom ${CONFIG.cupom} (${CONFIG.descontoPct}% no lanche favorito de cada um).\n\nNão precisa fazer nada. Para parar, responda PAUSAR.`]);
+  await bastidor('as mensagens saem espaçadas, poucas por hora, no horário em que a lanchonete está aberta. Isso protege o número da loja contra bloqueio do WhatsApp.');
+}
+
+async function roteiroMensagem() {
+  await cena(`📲 Dia 6 — no celular de ${lead.nome}`);
+  const f = lead.favorito;
+  await bot(`Oi, ${lead.nome}! 😊 Vi que faz um tempinho que você não pede aqui na ${CONFIG.nomeLoja}.\n\nHoje o seu ${f.nome} ${f.emoji} está com ${CONFIG.descontoPct}% de desconto: de ${reais(f.preco)} por ${reais(precoPromo())}.\nÉ só responder aqui. Cupom ${CONFIG.cupom}, vale até domingo.`);
+  await bastidor(`a mensagem usa o nome e o lanche que ${lead.nome} mais pede. Não é um disparo igual para todo mundo.`);
+  const r = await escolhe(['😋 Quero pedir!', '⏳ Agora não', '🚫 Não quero receber promoções']);
+
+  if (r.startsWith('🚫')) {
+    await bot('Tudo certo! Você não vai mais receber promoções nossas. Quando quiser pedir, é só chamar aqui. 💛');
+    await bastidor('quem pede para sair nunca mais recebe campanha. Isso respeita o cliente e a regra do WhatsApp, e o número aparece no relatório.');
+    return;
+  }
+
+  if (r.startsWith('⏳')) {
+    await bot(`Sem problema, ${lead.nome}! O cupom ${CONFIG.cupom} vale até domingo, é só chamar quando bater a fome. 🍟`);
+    await bastidor('o agente não insiste: é uma mensagem por campanha. Se a pessoa pedir até domingo, o cupom vale e a venda entra no relatório.');
+    return;
+  }
+
+  await bot('Oba! 🎉 Vai ser entrega ou retirada?');
+  const modo = await escolhe(['🛵 Entrega', '🏪 Retirada no balcão']);
+  let taxa = 0;
+  let destino = 'Retirada no balcão';
+  if (modo === '🛵 Entrega') {
+    taxa = CONFIG.taxaEntrega;
+    await bot('Me passa o endereço com rua, número e bairro?');
+    destino = await digita('Ex: Rua das Palmeiras, 45, Centro');
+  }
+  const desconto = f.preco - precoPromo();
+  const total = precoPromo() + taxa;
+  const linhas = [
+    `🙍 ${lead.nome}`,
+    `${f.emoji} 1x ${f.nome} — ${reais(f.preco)}`,
+    `🎟️ Cupom ${CONFIG.cupom} — −${reais(desconto)}`,
+  ];
+  if (taxa) linhas.push(`🛵 Entrega — ${reais(taxa)}`);
+  linhas.push(taxa ? `📍 ${destino}` : '🏪 Retirada no balcão');
+  await resumo(`🧾 Pedido #${numeroPedido}`, linhas, `Total: ${reais(total)}`);
+  await bot('Posso mandar pra cozinha?');
+  await escolhe(['✅ Pode mandar']);
+  await bot(`Pedido confirmado, ${lead.nome}! Sai em uns 30 minutos. Pagamento no Pix ou na ${taxa ? 'entrega' : 'retirada'}, como preferir. 🍔`);
+  await dono([`🧾 Pedido #${numeroPedido++} — ${lead.nome}\n1x ${f.nome}\n${taxa ? 'Entrega: ' + destino : 'Retirada no balcão'}\nTotal ${reais(total)}\n\n🔁 Voltou pela campanha (cupom ${CONFIG.cupom}). Estava há 27 dias sem pedir.`]);
+  await bastidor(`o cupom fica ligado ao pedido. Assim o relatório mostra quanto a campanha trouxe de volta, em reais, e não só "quantas mensagens saíram".`);
+}
+
+async function roteiroRelatorio() {
+  await cena('📅 Dia 11 — campanha encerrada');
+  const rel = div('dono-msg');
+  rel.innerHTML = `
+    <div class="rel-titulo">📊 Clientes de volta — outubro</div>
+    <div class="rel-sub">${CONFIG.nomeLoja} · campanha de 5 a 10/10</div>
+    <div class="destaques">
+      <div class="destaque"><b>R$ 1.894</b><span>vendido para quem tinha sumido</span></div>
+      <div class="destaque"><b>22</b><span>clientes voltaram a pedir</span></div>
+      <div class="destaque"><b>R$ 5,10</b><span>de venda para cada R$ 1 de desconto</span></div>
+      <div class="destaque"><b>9</b><span>pediram de novo depois, sem cupom</span></div>
+    </div>
+    <div class="secao">Do envio à venda</div>
+    ${[['Chamados', 63, 63], ['Leram', 54, 63], ['Responderam', 31, 63], ['Usaram o cupom', 22, 63]]
+      .map(([n, v, m]) => `<div class="barra"><span>${n}</span><div class="trilho"><div class="cheio" style="width:${(v / m * 100).toFixed(0)}%"></div></div><span>${v}</span></div>`).join('')}
+    <div class="secao">Lanches que mais trouxeram gente de volta</div>
+    ${[['X-Bacon', 9], ['X-Salada', 6], ['Cachorro-quente', 4], ['Pastel de carne', 3]]
+      .map(([n, v]) => `<div class="barra"><span>${n}</span><div class="trilho"><div class="cheio" style="width:${(v / 9 * 100).toFixed(0)}%"></div></div><span>${v}</span></div>`).join('')}
+    <div class="secao">Vale saber</div>
+    <ul class="lista-rel">
+      <li>Desconto dado no mês: R$ 371,40</li>
+      <li>Ticket médio de quem voltou: R$ 86,10 (pediram mais que o lanche)</li>
+      <li>Melhor horário de resposta: 18h às 20h</li>
+      <li>3 pessoas pediram para não receber mais</li>
+      <li>Clientes valiosos sumidos há mais de 60 dias: 5 (lista no painel)</li>
+      <li>Próximo mês: 41 clientes já entram na fila</li>
+    </ul>`;
+  await dono([rel, '🔗 Ver o painel completo com a lista de cada cliente']);
+  await bastidor('o relatório chega sozinho no WhatsApp e no e-mail do dono. Os números desta tela são de exemplo.');
+  await bastidor('"pediram de novo depois, sem cupom" mostra o cliente que voltou de verdade, e não só quem aproveitou a promoção.');
+}
+
+async function roteiroControle() {
+  await bot(`O dono controla tudo pelo próprio WhatsApp, sem abrir sistema. Escolhe um comando pra testar, ${lead.nome}:`);
+  const r = await escolhe(['PAUSAR', 'DESCONTO 15', 'QUEM VOLTOU']);
+  if (r === 'PAUSAR') {
+    await dono(['⏸️ Campanha pausada. Ninguém mais recebe mensagem até você responder RETOMAR.']);
+    await bastidor('útil em dia de cozinha lotada, falta de ingrediente ou feriado.');
+  } else if (r === 'DESCONTO 15') {
+    await dono(['✅ Pronto! As próximas mensagens saem com 15% de desconto. Quem já recebeu continua com o cupom antigo.']);
+    await bastidor('o dono decide o tamanho do desconto. A IA nunca inventa promoção nem preço.');
+  } else {
+    await dono(['🔁 Voltaram até agora (dia 8):\n• Ana — X-Bacon — R$ 74,60\n• Bruno — X-Salada — R$ 51,20\n• Carla — Cachorro-quente — R$ 39,80\n…e mais 13 clientes.']);
+    await bastidor('o dono acompanha a campanha no meio do caminho, sem esperar o relatório.');
+  }
+}
+
+const MENUS = [
+  { rotulo: '📅 O que o agente faz no mês',          roteiro: roteiroMesInteiro },
+  { rotulo: '📲 Receber a mensagem como cliente',    roteiro: roteiroMensagem },
+  { rotulo: '📊 Relatório que o dono recebe',        roteiro: roteiroRelatorio },
+  { rotulo: '🎛️ O dono no controle pelo WhatsApp',   roteiro: roteiroControle },
+];
+const ROTULO_SAIR = '✅ Já vi o suficiente';
+const ROTULO_DE_NOVO = '🔄 Receber a mensagem de novo (outra resposta)';
+const visitados = new Set();
+
+async function mostraMenu() {
+  while (true) {
+    const restantes = MENUS.filter(m => !visitados.has(m.rotulo));
+    const opcoes = restantes.map(m => m.rotulo);
+    if (visitados.has(MENUS[1].rotulo)) opcoes.push(ROTULO_DE_NOVO);
+    if (visitados.size > 0) opcoes.push(ROTULO_SAIR);
+    const escolha = await escolhe(opcoes);
+    if (escolha === ROTULO_SAIR) break;
+    const menu = escolha === ROTULO_DE_NOVO ? MENUS[1] : MENUS.find(m => m.rotulo === escolha);
+    visitados.add(menu.rotulo);
+    await menu.roteiro();
+    await bot(`Quer ver mais alguma coisa, ${lead.nome}?`);
+  }
+  await encerra();
+}
+
+async function encerra() {
+  await cena('Fim da demonstração');
+  await bot(`Isso foi uma prévia, ${lead.nome}. Na sua lanchonete, o agente usa os seus clientes, o seu cardápio e a promoção que você escolher, e todo mês traz de volta quem sumiu.`);
+  await bot('Quer ver isso rodando no seu negócio? Qual o nome da sua lanchonete?');
+  lead.loja = await digita('Nome do seu negócio');
+  await bot('E o melhor WhatsApp pra gente conversar?');
+  let tel = await digita('Seu WhatsApp com DDD');
+  while (tel.replace(/\D/g, '').length < 10) {
+    await bot('Não consegui ler o número. Confere se está com DDD?');
+    tel = await digita('Ex: 27 99999-9999');
+  }
+  lead.telefone = tel;
+  await bot(`Perfeito! Toca no botão abaixo e me manda a mensagem que eu te mostro como fica na ${lead.loja}. 😊`);
+
+  rodape.innerHTML = '';
+  const btn = document.createElement('a');
+  btn.className = 'cta-final';
+  btn.textContent = '💬 Quero no meu negócio';
+  const msg = `Olá! Testei a demo do agente que traz clientes de volta e quero saber mais.\nNome: ${lead.nome}\nNegócio: ${lead.loja}\nWhatsApp: ${lead.telefone}`;
+  btn.href = `https://wa.me/${CONFIG.whatsappForwes}?text=${encodeURIComponent(msg)}`;
+  btn.target = '_blank';
+  btn.rel = 'noopener';
+  const aviso = div('aviso-demo', 'Demonstração Forwes — lanchonete, preços e números são fictícios. Nenhum dado foi salvo.');
+  rodape.append(btn, aviso);
+}
+
+async function iniciar() {
+  await bot(`Oi! 👋 Esta é uma demonstração do agente que traz clientes de volta para a ${CONFIG.nomeLoja}.`);
+  await bot('Faz de conta que você é um cliente que sumiu. Qual é o seu nome?');
+  lead.nome = primeiroNome(await digita('Seu nome'));
+  await bot(`Prazer, ${lead.nome}! E qual lanche você sempre pedia aqui?`);
+  const fav = await escolhe(CONFIG.lanches.map(l => `${l.emoji} ${l.nome}`));
+  lead.favorito = CONFIG.lanches.find(l => fav.endsWith(l.nome));
+  await bot(`Anotado: ${lead.favorito.nome}. 😋 Agora escolhe o que você quer ver. Os cartões escuros mostram o que chega no celular do dono.`);
+  rodape.innerHTML = '';
+  await mostraMenu();
+}
+
+iniciar();
+</script>
+
+</body>
+</html>
