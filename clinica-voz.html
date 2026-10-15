@@ -239,7 +239,7 @@
 
 <header class="topo">
   <h1>Assistente de voz para clínica</h1>
-  <p>Ligue para a clínica de exemplo e converse com a assistente. Ela fala, e você responde falando ou tocando nas opções.</p>
+  <p>Ligue para a clínica de exemplo e converse com o assistente. Ele fala, e você responde falando ou tocando nas opções.</p>
 </header>
 
 <div class="telefone">
@@ -259,7 +259,7 @@
 </div>
 
 <div class="legenda" aria-hidden="true">
-  <span><i style="background:#FFFFFF;border:1px solid #BFD6DC"></i>fala da assistente</span>
+  <span><i style="background:#FFFFFF;border:1px solid #BFD6DC"></i>fala do assistente</span>
   <span><i style="background:#24262B"></i>sistema da clínica</span>
   <span><i style="background:#0B3B2E"></i>WhatsApp do paciente</span>
   <span><i style="border:1.5px dashed #BFD6DC"></i>o que acontece por trás</span>
@@ -308,7 +308,7 @@ function div(classe, texto) {
   return d;
 }
 
-/* ---------- Voz da assistente (voz do navegador) ---------- */
+/* ---------- Voz do assistente (gravada; voz do navegador so como reserva) ---------- */
 const temVoz = 'speechSynthesis' in window;
 let vozPt = null;
 function escolheVoz() {
@@ -336,16 +336,37 @@ function falaUmaFrase(frase) {
   });
 }
 
-async function fala(texto) {
+/* Voz gravada: um arquivo por frase em voz/fNN.mp3 */
+const player = new Audio();
+function tocaClipe(id) {
+  return new Promise(resolve => {
+    let feito = false;
+    const fim = ok => { if (!feito) { feito = true; player.onended = player.onerror = null; resolve(ok); } };
+    player.onended = () => fim(true);
+    player.onerror = () => fim(false);
+    player.src = `voz/${id}.mp3`;
+    player.play().catch(() => fim(false));
+    setTimeout(() => fim(true), 15000); // nenhum clipe passa de 10 s
+  });
+}
+
+async function fala(texto, clipes) {
   const d = add(div('digitando'));
   d.innerHTML = '<span></span><span></span><span></span>';
   await espera(350);
   d.remove();
   add(div('bolha bot', texto));
   chamada.classList.add('falando');
-  // frases curtas: o Chrome corta falas longas
-  const frases = texto.replace(/\n+/g, ' ').match(/[^.!?]+[.!?]*/g) || [texto];
-  for (const f of frases) { if (f.trim()) await falaUmaFrase(f.trim()); }
+  let tocou = false;
+  if (clipes && somLigado) {
+    tocou = true;
+    for (const c of clipes) { if (!(await tocaClipe(c))) { tocou = false; break; } }
+  }
+  if (!tocou) {
+    // frases curtas: o Chrome corta falas longas
+    const frases = texto.replace(/\n+/g, ' ').match(/[^.!?]+[.!?]*/g) || [texto];
+    for (const f of frases) { if (f.trim()) await falaUmaFrase(f.trim()); }
+  }
   chamada.classList.remove('falando');
 }
 
@@ -511,16 +532,15 @@ function qualEspecialidade(t) {
   return -1;
 }
 
-async function pergunta(texto, sugestoes, entende, placeholder) {
-  await fala(texto);
+async function pergunta(texto, sugestoes, entende, placeholder, clipes) {
+  await fala(texto, clipes);
   for (let tentativa = 0; ; tentativa++) {
     const r = await ouve(sugestoes, placeholder);
     if (DESLIGOU(r)) return null;
     const v = entende(r);
     if (v !== -1 && v !== null && v !== undefined) return v;
-    await fala(tentativa === 0
-      ? 'Desculpa, não entendi direito. Pode repetir?'
-      : `Você pode dizer, por exemplo: ${sugestoes.slice(0, 2).join(' ou ')}.`);
+    if (tentativa === 0) await fala('Desculpa, não entendi direito. Pode repetir?', ['f13']);
+    else await fala('Você pode tocar numa das respostas aqui embaixo.', ['f14']);
   }
 }
 
@@ -532,10 +552,10 @@ async function convenioOuParticular() {
     ['Particular', 'Unimed', 'Outro convênio'],
     t => tem(t, 'particular') ? 'particular'
       : tem(t, 'unimed') ? 'Unimed' : tem(t, 'bradesco') ? 'Bradesco Saúde'
-      : tem(t, 'conveni', 'plano', 'amil', 'sulamerica', 'hapvida', 'outro') ? 'outro' : -1);
+      : tem(t, 'conveni', 'plano', 'amil', 'sulamerica', 'hapvida', 'outro') ? 'outro' : -1, undefined, ['f08']);
   if (tipo === null) return null;
   if (tipo !== 'outro') return tipo;
-  await fala(`Hoje a clínica atende ${CONFIG.convenios.join(' e ')}. Esse convênio ainda não está na lista. Posso marcar particular, por ${CONFIG.valorParticular}. Pode ser?`);
+  await fala(`Hoje a clínica atende ${CONFIG.convenios.join(' e ')}. Esse convênio ainda não está na lista. Posso marcar particular, por ${CONFIG.valorParticular}. Pode ser?`, ['f09']);
   const r = await ouve(['Pode ser', 'Não, obrigado']);
   if (DESLIGOU(r)) return null;
   return simOuNao(r) === 'sim' ? 'particular' : 'desistiu';
@@ -543,30 +563,31 @@ async function convenioOuParticular() {
 
 async function agendar() {
   const esp = await pergunta('Claro! Para qual especialidade? Temos clínico geral, dermatologia e pediatria.',
-    CONFIG.especialidades, qualEspecialidade);
+    CONFIG.especialidades, qualEspecialidade, undefined, ['f06']);
   if (esp === null) return false;
   const especialidade = CONFIG.especialidades[esp];
-  const h = await pergunta(`Para ${especialidade.toLowerCase()}, tenho ${CONFIG.horarios[0]}, ${CONFIG.horarios[1]} ou ${CONFIG.horarios[2]}. Qual fica melhor?`,
-    ['Quinta às 9h', 'Quinta às 14h30', 'Sexta às 10h'], qualHorario);
+  const h = await pergunta(`Tenho ${CONFIG.horarios[0]}, ${CONFIG.horarios[1]} ou ${CONFIG.horarios[2]}. Qual fica melhor?`,
+    ['Quinta às 9h', 'Quinta às 14h30', 'Sexta às 10h'], qualHorario, undefined, ['f07']);
   if (h === null) return false;
   const horario = CONFIG.horarios[h];
   const pagamento = await convenioOuParticular();
   if (pagamento === null) return false;
   if (pagamento === 'desistiu') {
-    await fala('Tudo bem! Vou pedir para a recepção te ligar para ver outra opção.');
+    await fala('Tudo bem! Vou pedir para a recepção te ligar para ver outra opção.', ['f10']);
     await cartao('🖥️ Sistema da clínica', [`📞 Retornar ligação: ${paciente.nome}\nQueria ${especialidade.toLowerCase()}, convênio fora da lista.`]);
     registro.push('Pediu retorno da recepção (convênio)');
     return true;
   }
   const r = await pergunta(`Então fica assim: ${especialidade.toLowerCase()}, ${horario}, ${pagamento === 'particular' ? 'particular' : 'com convênio ' + pagamento}. Posso confirmar?`,
-    ['Sim, pode confirmar', 'Não, quero mudar'], simOuNao);
+    ['Sim, pode confirmar', 'Não, quero mudar'], simOuNao, undefined,
+    ['f15', ['f16', 'f17', 'f18'][esp], ['f19', 'f20', 'f21'][h], { particular: 'f22', Unimed: 'f23', 'Bradesco Saúde': 'f24' }[pagamento], 'f25']);
   if (r === null) return false;
   if (r === 'nao') {
-    await fala('Sem problema, vamos de novo.');
+    await fala('Sem problema, vamos de novo.', ['f11']);
     return agendar();
   }
-  await fala(`Prontinho, ${paciente.nome}! Sua consulta está marcada. Vou te mandar a confirmação pelo WhatsApp agora.`);
-  await cartao('🖥️ Agenda da clínica', [`✅ Nova consulta (marcada pela assistente de voz)\n${paciente.nome} · ${especialidade}\n${horario} · ${pagamento === 'particular' ? 'Particular' : pagamento}`]);
+  await fala(`Prontinho, ${paciente.nome}! Sua consulta está marcada. Vou te mandar a confirmação pelo WhatsApp agora.`, ['f12']);
+  await cartao('🖥️ Agenda da clínica', [`✅ Nova consulta (marcada pelo assistente de voz)\n${paciente.nome} · ${especialidade}\n${horario} · ${pagamento === 'particular' ? 'Particular' : pagamento}`]);
   await cartao('💬 WhatsApp do paciente', [`${CONFIG.nomeClinica}: Olá, ${paciente.nome}! Sua consulta de ${especialidade.toLowerCase()} está confirmada para ${horario}.\n📍 ${CONFIG.endereco}`], true);
   await bastidor('a consulta entra direto na agenda que a clínica já usa. Ninguém da recepção precisou atender o telefone.');
   registro.push(`Marcou ${especialidade.toLowerCase()}, ${horario}`);
@@ -579,23 +600,23 @@ async function remarcarOuCancelar(acaoInicial) {
   let acao = acaoInicial;
   if (!acao) {
     acao = await pergunta(`Encontrei a sua consulta de ${atual}. Você quer remarcar ou cancelar?`,
-      ['Remarcar', 'Cancelar'], t => tem(t, 'remarc', 'mudar', 'trocar', 'outro dia') ? 'remarcar' : tem(t, 'cancel', 'desmarc') ? 'cancelar' : -1);
+      ['Remarcar', 'Cancelar'], t => tem(t, 'remarc', 'mudar', 'trocar', 'outro dia') ? 'remarcar' : tem(t, 'cancel', 'desmarc') ? 'cancelar' : -1, undefined, ['f26', 'f27']);
     if (acao === null) return false;
   } else {
-    await fala(`Encontrei a sua consulta de ${atual}.`);
+    await fala(`Encontrei a sua consulta de ${atual}.`, ['f26']);
   }
   if (acao === 'cancelar') {
-    await fala('Pronto, consulta cancelada. Obrigada por avisar com antecedência!');
+    await fala('Pronto, consulta cancelada. Obrigada por avisar com antecedência!', ['f28']);
     await cartao('🖥️ Agenda da clínica', [`❌ Cancelada: ${paciente.nome} · ${atual}\n🔁 Horário liberado. Avisando a lista de espera pelo WhatsApp.`]);
     await bastidor('o horário volta para a agenda na hora, e quem está na lista de espera é avisado. A clínica não perde a vaga.');
     registro.push('Cancelou consulta (vaga oferecida à lista de espera)');
     paciente.consulta = '';
     return true;
   }
-  const h = await pergunta(`Claro! Tenho ${CONFIG.horarios.join(', ')}. Qual prefere?`,
-    ['Quinta às 9h', 'Quinta às 14h30', 'Sexta às 10h'], qualHorario);
+  const h = await pergunta(`Tenho ${CONFIG.horarios[0]}, ${CONFIG.horarios[1]} ou ${CONFIG.horarios[2]}. Qual fica melhor?`,
+    ['Quinta às 9h', 'Quinta às 14h30', 'Sexta às 10h'], qualHorario, undefined, ['f07']);
   if (h === null) return false;
-  await fala(`Feito! Sua consulta passou para ${CONFIG.horarios[h]}. A confirmação vai pelo WhatsApp.`);
+  await fala(`Feito! Sua consulta foi remarcada para ${CONFIG.horarios[h]}. A confirmação vai pelo WhatsApp.`, ['f29']);
   await cartao('🖥️ Agenda da clínica', [`🔄 Remarcada: ${paciente.nome}\nDe: ${atual}\nPara: ${CONFIG.horarios[h]}`]);
   registro.push(`Remarcou para ${CONFIG.horarios[h]}`);
   paciente.consulta = paciente.consulta ? paciente.consulta.replace(/de .*$/, 'de ' + CONFIG.horarios[h]) : `clínico geral de ${CONFIG.horarios[h]}`;
@@ -606,43 +627,43 @@ function respostaDuvida(t) {
   if (tem(t, 'peito', 'falta de ar', 'desmai', 'sangr', 'emergenc', 'urgen', 'infart', 'convuls', 'nao consigo respirar'))
     return { urgencia: true };
   if (tem(t, 'endereco', 'onde fica', 'localiza', 'onde e', 'chegar'))
-    return { texto: `Ficamos na ${CONFIG.endereco}. Quer que eu mande a localização no seu WhatsApp?`, tema: 'endereço' };
+    return { texto: `Ficamos na ${CONFIG.endereco}. Vou mandar a localização no seu WhatsApp.`, tema: 'endereço', clipes: ['f32'] };
   if (tem(t, 'conveni', 'plano', 'unimed', 'bradesco'))
-    return { texto: `Atendemos ${CONFIG.convenios.join(' e ')}. A consulta particular custa ${CONFIG.valorParticular}.`, tema: 'convênio' };
+    return { texto: `Atendemos ${CONFIG.convenios.join(' e ')}. A consulta particular custa ${CONFIG.valorParticular}.`, tema: 'convênio', clipes: ['f33'] };
   if (tem(t, 'valor', 'preco', 'quanto', 'custa', 'particular'))
-    return { texto: `A consulta particular custa ${CONFIG.valorParticular}, e pode pagar no Pix ou no cartão.`, tema: 'valor' };
+    return { texto: `A consulta particular custa ${CONFIG.valorParticular}, e pode pagar no Pix ou no cartão.`, tema: 'valor', clipes: ['f34'] };
   if (tem(t, 'horario', 'abre', 'fecha', 'funciona', 'sabado'))
-    return { texto: 'A clínica atende de segunda a sexta, das 7h às 19h, e sábado até meio-dia. Eu atendo 24 horas.', tema: 'horário' };
+    return { texto: 'A clínica atende de segunda a sexta, das 7h às 19h, e sábado até meio-dia. Eu atendo 24 horas.', tema: 'horário', clipes: ['f35'] };
   if (tem(t, 'exame', 'resultado'))
-    return { texto: 'Os resultados ficam prontos em até 3 dias úteis e chegam no seu WhatsApp.', tema: 'exames' };
+    return { texto: 'Os resultados ficam prontos em até 3 dias úteis e chegam no seu WhatsApp.', tema: 'exames', clipes: ['f36'] };
   return null;
 }
 
 async function duvida(textoJaDito) {
   let t = textoJaDito;
   if (!t) {
-    await fala('Pode perguntar!');
+    await fala('Pode perguntar!', ['f30']);
     t = await ouve(['Qual o endereço?', 'Aceita convênio?', 'Quanto custa a consulta?', 'Estou com dor no peito']);
     if (DESLIGOU(t)) return false;
   }
   const r = respostaDuvida(t);
   if (r && r.urgencia) {
     add(div('bolha alerta', '🚨 Possível emergência'));
-    await fala(`${paciente.nome}, isso pode ser uma emergência. Desligue e ligue agora para o 192, o SAMU, ou vá ao pronto-socorro mais próximo. Já avisei a equipe da clínica.`);
+    await fala(`${paciente.nome}, isso pode ser uma emergência. Desligue e ligue agora para o 192, o SAMU, ou vá ao pronto-socorro mais próximo. Já avisei a equipe da clínica.`, ['f31']);
     await cartao('🖥️ Sistema da clínica', [`🚨 URGENTE: ${paciente.nome} relatou sintoma de emergência na ligação.\nRecebeu orientação para ligar 192. Retornar assim que possível.`]);
-    await bastidor('a assistente não dá diagnóstico nem receita. Palavras de urgência fazem ela orientar o SAMU na hora e avisar a equipe.');
+    await bastidor('o assistente não dá diagnóstico nem receita. Palavras de urgência fazem ele orientar o SAMU na hora e avisar a equipe.');
     registro.push('Sintoma de urgência: orientado 192 e equipe avisada');
     return true;
   }
   if (r) {
-    await fala(r.texto);
-    await bastidor('as respostas vêm das informações que a própria clínica cadastrou. A assistente não inventa nada.');
+    await fala(r.texto, r.clipes);
+    await bastidor('as respostas vêm das informações que a própria clínica cadastrou. O assistente não inventa nada.');
     registro.push(`Tirou dúvida: ${r.tema}`);
     return true;
   }
-  await fala('Essa eu prefiro confirmar com a equipe, para não te passar informação errada. A recepção vai te retornar ainda hoje.');
+  await fala('Essa eu prefiro confirmar com a equipe, para não te passar informação errada. A recepção vai te retornar ainda hoje.', ['f37']);
   await cartao('🖥️ Sistema da clínica', [`📞 Retornar ligação: ${paciente.nome}\nPergunta: "${t}"`]);
-  await bastidor('o que a assistente não sabe com segurança vira um recado anotado para a recepção, com a pergunta exata.');
+  await bastidor('o que o assistente não sabe com segurança vira um recado anotado para a recepção, com a pergunta exata.');
   registro.push('Dúvida encaminhada à recepção');
   return true;
 }
@@ -657,7 +678,7 @@ function intencao(t) {
 }
 
 async function atende() {
-  await fala(`Posso te ajudar a marcar uma consulta, remarcar ou cancelar, ou tirar uma dúvida. O que você precisa?`);
+  await fala(`Posso te ajudar a marcar uma consulta, remarcar ou cancelar, ou tirar uma dúvida. O que você precisa?`, ['f03']);
   let primeira = true;
   while (true) {
     const sugestoes = ['Quero marcar uma consulta', 'Preciso remarcar', 'Quero cancelar', 'Tenho uma dúvida'];
@@ -665,9 +686,9 @@ async function atende() {
     const t = await ouve(sugestoes);
     if (DESLIGOU(t)) return;
     const i = intencao(t);
-    if (i === -1) { await fala('Desculpa, não entendi. Você quer marcar, remarcar, cancelar ou tirar uma dúvida?'); continue; }
+    if (i === -1) { await fala('Desculpa, não entendi. Você quer marcar, remarcar, cancelar ou tirar uma dúvida?', ['f04']); continue; }
     if (i === 'fim') {
-      if (primeira) { await fala('Tudo bem! Se precisar, é só ligar de novo.'); return; }
+      if (primeira) { await fala('Tudo bem! Se precisar, é só ligar de novo.', ['f05']); return; }
       return;
     }
     let ok;
@@ -677,7 +698,7 @@ async function atende() {
     else ok = await duvida(respostaDuvida(t) ? t : null);
     if (!ok) return;
     primeira = false;
-    await fala('Posso te ajudar em mais alguma coisa?');
+    await fala('Posso te ajudar em mais alguma coisa?', ['f38']);
   }
 }
 
@@ -693,6 +714,8 @@ async function ligar() {
   rodape.innerHTML = '';
   // desbloqueia a voz no iPhone/Chrome: precisa nascer de um toque
   if (temVoz) { speechSynthesis.cancel(); speechSynthesis.speak(new SpeechSynthesisUtterance('')); }
+  // libera o audio no iPhone: o primeiro play precisa nascer do toque
+  player.muted = true; player.src = 'voz/f02.mp3'; player.play().then(() => player.pause()).catch(() => {}).finally(() => { player.muted = false; });
   statusEl.textContent = 'Chamando...';
   await cena('📞 Chamando a Clínica Exemplo...');
   await espera(1200);
@@ -701,20 +724,21 @@ async function ligar() {
   relogio = setInterval(atualizaRelogio, 1000);
   atualizaRelogio();
 
-  await fala(`${CONFIG.nomeClinica}, olá! Aqui é a assistente virtual. Com quem eu falo?`);
+  await fala(`${CONFIG.nomeClinica}, olá! Aqui é o assistente virtual. Com quem eu falo?`, ['f01']);
   const n = await ouve(['Ana', 'Carlos', 'Mariana'], 'Ou digite seu nome');
   if (DESLIGOU(n)) return encerrar();
   paciente.nome = limpaNome(n);
-  await fala(`Prazer, ${paciente.nome}!`);
+  await fala(`Prazer, ${paciente.nome}!`, ['f02']);
   await atende();
   await encerrar();
 }
 
 async function encerrar() {
   if (temVoz) speechSynthesis.cancel();
+  player.pause();
   if (emLigacao) {
     const s = Math.floor((Date.now() - inicioLigacao) / 1000);
-    if (paciente.nome) await fala(`Obrigada pela ligação, ${paciente.nome}. Tenha um ótimo dia!`);
+    if (paciente.nome) await fala(`Obrigada pela ligação, ${paciente.nome}. Tenha um ótimo dia!`, ['f39']);
     clearInterval(relogio);
     emLigacao = false;
     statusEl.textContent = 'Ligação encerrada';
@@ -731,25 +755,25 @@ async function encerrar() {
     await bastidor('o lembrete automático reduz muito as faltas sem aviso, e a recepção não precisa ligar para ninguém.');
   }
 
-  await cena('O que a assistente faz pela clínica');
+  await cena('O que o assistente faz pela clínica');
   await bastidor('atende todas as ligações ao mesmo tempo, no horário de pico, à noite e no fim de semana. Nenhuma ligação cai.');
-  await bastidor('na versão para a sua clínica, a voz é natural, bem mais humana que esta voz do navegador, e usa a sua agenda, os seus convênios e os seus preços.');
-  await fala('Quer ver isso atendendo na sua clínica? Me diz o nome dela aqui embaixo.');
+  await bastidor('na versão para a sua clínica, ele usa a sua agenda, os seus convênios e os seus preços.');
+  await fala('Quer ver isso atendendo na sua clínica? Me diz o nome dela aqui embaixo.', ['f40']);
   paciente.clinica = await digita('Nome da sua clínica ou consultório');
-  await fala('E qual o melhor WhatsApp para a gente conversar?');
+  await fala('E qual o melhor WhatsApp para a gente conversar?', ['f41']);
   let tel = await digita('Seu WhatsApp com DDD');
   while (tel.replace(/\D/g, '').length < 10) {
-    await fala('Não consegui ler o número. Confere se está com DDD?');
+    await fala('Não consegui ler o número. Confere se está com DDD?', ['f42']);
     tel = await digita('Ex: 27 99999-9999');
   }
   paciente.telefone = tel;
-  await fala('Perfeito! Toque no botão abaixo para falar com a Forwes.');
+  await fala('Perfeito! Toque no botão abaixo para falar com a Forwes.', ['f43']);
 
   rodape.innerHTML = '';
   const btn = document.createElement('a');
   btn.className = 'cta-final';
   btn.textContent = '💬 Quero na minha clínica';
-  const msg = `Olá! Testei a demo da assistente de voz para clínica e quero saber mais.\nNome: ${paciente.nome || '-'}\nClínica: ${paciente.clinica}\nWhatsApp: ${paciente.telefone}`;
+  const msg = `Olá! Testei a demo do assistente de voz para clínica e quero saber mais.\nNome: ${paciente.nome || '-'}\nClínica: ${paciente.clinica}\nWhatsApp: ${paciente.telefone}`;
   btn.href = `https://wa.me/${CONFIG.whatsappForwes}?text=${encodeURIComponent(msg)}`;
   btn.target = '_blank';
   btn.rel = 'noopener';
@@ -761,11 +785,11 @@ document.getElementById('som').onclick = e => {
   somLigado = !somLigado;
   e.currentTarget.textContent = somLigado ? '🔊' : '🔇';
   e.currentTarget.setAttribute('aria-label', somLigado ? 'Desligar o som' : 'Ligar o som');
-  if (!somLigado && temVoz) speechSynthesis.cancel();
+  if (!somLigado) { player.pause(); if (temVoz) speechSynthesis.cancel(); }
 };
 
 (function inicio() {
-  add(div('bolha bastidor', '🔍 Aumente o volume. A assistente vai falar com você. Quando for a sua vez, toque no microfone e responda falando, ou toque numa das respostas prontas.'));
+  add(div('bolha bastidor', '🔍 Aumente o volume. O assistente vai falar com você. Quando for a sua vez, toque no microfone e responda falando, ou toque numa das respostas prontas.'));
   const b = document.createElement('button');
   b.className = 'ligar';
   b.textContent = '📞 Ligar para a clínica';
