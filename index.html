@@ -1,667 +1,479 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Demo Atendente Pet Shop</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forwes · Automação e IA</title>
+<meta name="description" content="Atendimento no WhatsApp, assistente de voz, lembretes e apps sob medida para pequenos negócios. Teste as demos.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+:root {
+  --noite: #12142E;
+  --noite-2: #1B1F45;
+  --noite-3: #262B5C;
+  --linha: #343A72;
+  --texto: #EEF0FF;
+  --suave: #A3A8D6;
+  --sinal: #8C9CFF;
+  --ambar: #FFB547;
+  --pet: #F08A24;
+  --lanche: #F2B21B;
+  --clinica: #3CC7A6;
+  --zap-in: #262B5C;
+  --zap-out: #2F3A8F;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--noite);
+  color: var(--texto);
+  font: 400 17px/1.6 Manrope, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--ambar); outline-offset: 3px; border-radius: 6px; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+h1, h2, h3 { font-family: 'Bricolage Grotesque', sans-serif; line-height: 1.05; margin: 0; }
+h2 { font-size: clamp(30px, 4.4vw, 46px); font-weight: 800; letter-spacing: -0.02em; max-width: 18ch; }
+.intro { color: var(--suave); max-width: 56ch; margin: 14px 0 0; }
 
-  /* ============================================================
-     CORES — so editar aqui
-     ============================================================ */
-  :root {
-    --ink: #1F3B2C;
-    --ink-light: #3D6B4F;
-    --paper: #FFFBF3;
-    --paper-dim: #F3EBDA;
-    --text-dark: #1E2420;
-    --text-soft: #5E6A62;
-    --accent: #F08A24;
-    --accent-dark: #C96A0C;
-    --dono-bg: #24262B;
-    --dono-card: #33363D;
-    --dono-text: #ECEDEF;
-    --radius: 18px;
-    --card: #FFFFFF;
-    --borda: #D8CDB4;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --ink: #2C5A40; --ink-light: #3D6B4F; --paper: #1A1D1B; --paper-dim: #232724;
-      --text-dark: #ECEDE8; --text-soft: #A7B0AA; --card: #2C312D; --borda: #4A5048;
-    }
-  }
-  :root[data-theme="dark"] {
-    --ink: #2C5A40; --ink-light: #3D6B4F; --paper: #1A1D1B; --paper-dim: #232724;
-    --text-dark: #ECEDE8; --text-soft: #A7B0AA; --card: #2C312D; --borda: #4A5048;
-  }
+/* fundo: grade de pontos que "acende" perto do celular */
+.fundo {
+  position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background-image: radial-gradient(var(--linha) 1px, transparent 1.4px);
+  background-size: 26px 26px;
+  mask-image: radial-gradient(ellipse 70% 80% at 72% 45%, #000 20%, transparent 75%);
+}
 
-  * { box-sizing: border-box; }
+/* topo */
+header.topo { position: relative; z-index: 2; }
+.topo .wrap { display: flex; align-items: center; justify-content: space-between; height: 76px; }
+.marca { font: 800 24px 'Bricolage Grotesque', sans-serif; text-decoration: none; letter-spacing: -0.02em; display: flex; align-items: center; gap: 10px; }
+.marca i { width: 12px; height: 12px; border-radius: 50%; background: var(--ambar); box-shadow: 0 0 0 4px rgba(255,181,71,.18); display: inline-block; }
+.topo nav { display: flex; gap: 26px; font-weight: 600; font-size: 15px; }
+.topo nav a { text-decoration: none; color: var(--suave); }
+.topo nav a:hover { color: var(--texto); }
 
-  body {
-    margin: 0;
-    font-family: 'Nunito', sans-serif;
-    background: var(--paper);
-    color: var(--text-dark);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 24px 16px 32px;
-  }
+/* hero */
+.hero { position: relative; padding: 40px 0 90px; }
+.hero .wrap { position: relative; z-index: 1; display: grid; grid-template-columns: 1.1fr .9fr; gap: 56px; align-items: center; }
+.hero h1 { font-size: clamp(40px, 6.4vw, 76px); font-weight: 800; letter-spacing: -0.035em; }
+.hero h1 .tarde { display: block; color: var(--suave); font-weight: 500; font-size: .62em; letter-spacing: -0.02em; margin-top: 14px; }
+.hero p.sub { color: var(--suave); font-size: 19px; max-width: 46ch; margin: 24px 0 34px; }
+.botoes { display: flex; flex-wrap: wrap; gap: 14px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 10px; text-decoration: none;
+  font: 700 16px Manrope, sans-serif; padding: 15px 24px; border-radius: 14px; border: 0; cursor: pointer;
+  transition: transform .15s ease, background .15s ease;
+}
+.btn:active { transform: scale(.97); }
+.btn.cheio { background: var(--ambar); color: #241A05; }
+.btn.cheio:hover { background: #FFC570; }
+.btn.vazio { background: transparent; color: var(--texto); box-shadow: inset 0 0 0 2px var(--linha); }
+.btn.vazio:hover { box-shadow: inset 0 0 0 2px var(--sinal); }
 
-  .topo { text-align: center; max-width: 420px; margin-bottom: 18px; }
-  .topo h1 { font-size: 22px; font-weight: 900; color: var(--text-dark); margin: 0 0 6px; letter-spacing: -0.3px; }
-  .topo p { font-size: 14px; color: var(--text-soft); margin: 0; line-height: 1.5; }
+/* celular animado */
+.celular {
+  width: min(340px, 100%); justify-self: center; aspect-ratio: 9 / 17.5;
+  background: var(--noite-2); border-radius: 42px; padding: 14px;
+  box-shadow: 0 0 0 2px var(--linha), 0 40px 80px -30px rgba(140,156,255,.45);
+  position: relative;
+}
+.tela { height: 100%; border-radius: 30px; background: #0E1030; display: flex; flex-direction: column; overflow: hidden; }
+.barra { display: flex; justify-content: space-between; padding: 12px 20px 6px; font-size: 13px; font-weight: 700; color: var(--suave); }
+.barra .hora { color: var(--texto); font-variant-numeric: tabular-nums; }
+.contato { display: flex; align-items: center; gap: 10px; padding: 8px 16px 12px; border-bottom: 1px solid var(--noite-3); }
+.contato .av { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-size: 18px; background: var(--noite-3); transition: background .4s; }
+.contato b { display: block; font-size: 15px; }
+.contato small { color: var(--clinica); font-size: 12px; font-weight: 600; }
+.conversa { flex: 1; padding: 14px 12px; display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; }
+.msg {
+  max-width: 84%; padding: 9px 12px; border-radius: 16px; font-size: 14px; line-height: 1.4;
+  opacity: 0; transform: translateY(10px) scale(.96); transition: opacity .35s ease, transform .35s ease;
+}
+.msg.on { opacity: 1; transform: none; }
+.msg.cli { align-self: flex-end; background: var(--zap-out); border-bottom-right-radius: 5px; }
+.msg.bot { align-self: flex-start; background: var(--zap-in); border-bottom-left-radius: 5px; }
+.msg.sis { align-self: center; background: transparent; color: var(--ambar); font-size: 12px; font-weight: 700; padding: 4px 10px; box-shadow: inset 0 0 0 1px rgba(255,181,71,.4); border-radius: 99px; }
+.msg.digitando { display: flex; gap: 4px; padding: 13px 14px; }
+.msg.digitando span { width: 7px; height: 7px; border-radius: 50%; background: var(--suave); animation: pula 1s infinite; }
+.msg.digitando span:nth-child(2) { animation-delay: .15s; }
+.msg.digitando span:nth-child(3) { animation-delay: .3s; }
+@keyframes pula { 0%, 60%, 100% { transform: none; opacity: .5; } 30% { transform: translateY(-4px); opacity: 1; } }
+.cenas { display: flex; justify-content: center; gap: 8px; margin-top: 18px; }
+.cenas button { width: 30px; height: 6px; border-radius: 9px; border: 0; background: var(--linha); cursor: pointer; padding: 0; }
+.cenas button[aria-current="true"] { background: var(--sinal); }
+.legenda { text-align: center; color: var(--suave); font-size: 14px; margin-top: 10px; min-height: 1.6em; }
 
-  .telefone {
-    width: 400px;
-    max-width: 100%;
-    background: var(--ink);
-    border-radius: 32px;
-    padding: 10px;
-    box-shadow: 0 24px 60px rgba(31, 59, 44, 0.28);
-  }
+section { padding: 96px 0; position: relative; }
 
-  .tela {
-    background: var(--paper-dim);
-    border-radius: 24px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    height: 660px;
-    max-height: calc(100vh - 140px);
-    min-height: 480px;
-  }
+/* demos */
+#demos { background: var(--noite-2); }
+.demos { margin-top: 48px; display: grid; gap: 18px; }
+.demo {
+  --cor: var(--sinal);
+  display: grid; grid-template-columns: 76px 1fr auto; gap: 24px; align-items: center;
+  padding: 26px 28px; border-radius: 22px; background: var(--noite); text-decoration: none;
+  box-shadow: inset 0 0 0 1px var(--linha); position: relative; overflow: hidden;
+  transition: box-shadow .25s ease;
+}
+.demo::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--cor); }
+.demo:hover, .demo:focus-visible { box-shadow: inset 0 0 0 2px var(--cor); }
+.demo .ico { width: 76px; height: 76px; border-radius: 20px; display: grid; place-items: center; font-size: 36px; background: color-mix(in srgb, var(--cor) 16%, transparent); }
+.demo h3 { font-size: 25px; font-weight: 700; letter-spacing: -0.01em; }
+.demo p { margin: 6px 0 10px; color: var(--suave); max-width: 60ch; }
+.demo ul { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+.demo li { font-size: 13px; font-weight: 600; padding: 4px 11px; border-radius: 99px; background: var(--noite-3); color: var(--texto); }
+.demo .abrir { font-weight: 700; color: var(--noite); background: var(--cor); padding: 13px 20px; border-radius: 13px; white-space: nowrap; transition: transform .2s ease; }
+.demo:hover .abrir { transform: translateX(4px); }
+.pet { --cor: var(--pet); } .lanche { --cor: var(--lanche); } .clinica { --cor: var(--clinica); }
+.aviso-demo { color: var(--suave); font-size: 14px; margin-top: 18px; }
 
-  .cabecalho {
-    background: var(--ink);
-    color: #FFFBF3;
-    padding: 16px 20px 14px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
+/* servicos */
+.grupos { margin-top: 48px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 36px; }
+.grupo h3 { font-size: 22px; font-weight: 700; padding-bottom: 14px; margin-bottom: 14px; border-bottom: 2px solid var(--linha); }
+.grupo ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
+.grupo li b { display: block; font-weight: 700; }
+.grupo li span { color: var(--suave); font-size: 15px; }
 
-  .avatar {
-    width: 38px; height: 38px; border-radius: 50%;
-    background: var(--accent);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 19px; flex-shrink: 0;
-  }
+/* trabalhos */
+#trabalhos { background: var(--noite-2); }
+.trabalhos { margin-top: 48px; display: grid; grid-template-columns: 1.3fr 1fr; gap: 18px; }
+.trabalho { background: var(--noite); border-radius: 22px; padding: 28px; box-shadow: inset 0 0 0 1px var(--linha); }
+.trabalho.grande { grid-row: span 2; display: flex; flex-direction: column; }
+.trabalho .estado { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--clinica); }
+.trabalho .estado::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.trabalho .estado.andamento { color: var(--ambar); }
+.trabalho h3 { font-size: 24px; font-weight: 700; margin: 12px 0 8px; }
+.trabalho p { color: var(--suave); margin: 0; }
+.trabalho ul { margin: 16px 0 0; padding-left: 20px; color: var(--texto); }
+.trabalho ul li { margin: 4px 0; }
+/* mini painel do app (desenhado em CSS) */
+.painel { margin-top: auto; padding-top: 24px; }
+.painel .barras { display: flex; align-items: flex-end; gap: 10px; height: 120px; padding: 16px; border-radius: 16px; background: var(--noite-2); }
+.painel .barras i { flex: 1; border-radius: 6px 6px 3px 3px; background: var(--sinal); height: var(--h); transform-origin: bottom; transform: scaleY(.05); transition: transform .9s cubic-bezier(.2,.8,.2,1); }
+.painel.on .barras i { transform: none; }
+.painel .barras i:nth-child(2) { transition-delay: .08s; background: var(--ambar); }
+.painel .barras i:nth-child(3) { transition-delay: .16s; }
+.painel .barras i:nth-child(4) { transition-delay: .24s; background: var(--clinica); }
+.painel .barras i:nth-child(5) { transition-delay: .32s; }
+.painel .barras i:nth-child(6) { transition-delay: .4s; background: var(--ambar); }
+.painel small { display: block; color: var(--suave); font-size: 13px; margin-top: 8px; }
 
-  .nome { font-weight: 800; font-size: 15px; }
-  .status { font-size: 12px; color: #BFD8C8; display: flex; align-items: center; gap: 5px; }
-  .ponto { width: 6px; height: 6px; border-radius: 50%; background: #6FE0A8; }
+/* como comeca */
+.passos { margin: 48px 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; counter-reset: p; position: relative; }
+.passos li { counter-increment: p; padding: 0 28px 0 0; position: relative; }
+.passos li::before {
+  content: counter(p); display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%;
+  font: 800 20px 'Bricolage Grotesque', sans-serif; background: var(--noite); box-shadow: inset 0 0 0 2px var(--sinal); color: var(--sinal);
+  margin-bottom: 18px; position: relative; z-index: 1;
+}
+.passos::before { content: ''; position: absolute; top: 24px; left: 24px; right: 33%; height: 2px; background: var(--linha); }
+.passos h3 { font-size: 21px; font-weight: 700; margin-bottom: 6px; }
+.passos p { color: var(--suave); margin: 0; }
 
-  .corpo {
-    flex: 1;
-    overflow-y: auto;
-    padding: 18px 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    scroll-behavior: smooth;
-  }
-  .corpo::-webkit-scrollbar { width: 5px; }
-  .corpo::-webkit-scrollbar-thumb { background: #D8CDB4; border-radius: 8px; }
+/* contato */
+.final { text-align: center; padding: 110px 0; background: radial-gradient(ellipse 60% 70% at 50% 100%, rgba(140,156,255,.22), transparent 70%); }
+.final h2 { margin: 0 auto; max-width: 20ch; }
+.final p { color: var(--suave); margin: 16px auto 32px; max-width: 46ch; }
+.final .botoes { justify-content: center; }
+footer { border-top: 1px solid var(--linha); color: var(--suave); font-size: 14px; }
+footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 26px 24px; }
 
-  .bolha {
-    max-width: 84%;
-    padding: 10px 14px;
-    border-radius: var(--radius);
-    font-size: 14px;
-    line-height: 1.48;
-    opacity: 0;
-    transform: translateY(6px);
-    animation: entra 0.32s ease forwards;
-    white-space: pre-line;
-  }
-  @keyframes entra { to { opacity: 1; transform: translateY(0); } }
-
-  .bolha.bot { align-self: flex-start; background: var(--card); color: var(--text-dark); border-bottom-left-radius: 5px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-  .bolha.user { align-self: flex-end; background: var(--ink-light); color: #fff; border-bottom-right-radius: 5px; }
-
-  .bolha.bastidor {
-    align-self: stretch;
-    max-width: 100%;
-    background: transparent;
-    border: 1.5px dashed #C8BC9E;
-    color: var(--text-soft);
-    font-style: italic;
-    font-size: 12.5px;
-    padding: 8px 12px;
-  }
-
-  .bolha.cena {
-    align-self: center;
-    background: var(--ink);
-    color: var(--paper);
-    font-size: 12px;
-    font-weight: 700;
-    padding: 5px 12px;
-    border-radius: 20px;
-  }
-
-  .bolha.resumo {
-    align-self: flex-start;
-    background: var(--card);
-    border: 1.5px solid var(--paper-dim);
-    font-size: 13.5px;
-    line-height: 1.65;
-    border-bottom-left-radius: 5px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-  }
-  .resumo-titulo { font-weight: 900; color: var(--accent); display: block; margin-bottom: 3px; }
-  .linha-total { font-weight: 900; border-top: 1px dashed #D8CDB4; margin-top: 4px; padding-top: 4px; }
-
-  /* Celular do dono */
-  .dono {
-    align-self: stretch;
-    background: var(--dono-bg);
-    color: var(--dono-text);
-    border: 1px solid #3A3D44;
-    border-radius: 16px;
-    padding: 10px 12px 12px;
-    font-size: 13.5px;
-    line-height: 1.5;
-    opacity: 0;
-    transform: translateY(6px);
-    animation: entra 0.32s ease forwards;
-  }
-  .dono-rotulo {
-    font-size: 11px; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase;
-    color: #FFB46B; display: block; margin-bottom: 6px;
-  }
-  .dono-msg { background: var(--dono-card); border-radius: 12px; padding: 9px 12px; white-space: pre-line; }
-  .dono-msg + .dono-msg { margin-top: 6px; }
-  .dono-msg.resposta { background: #3E6B50; margin-left: auto; width: fit-content; max-width: 85%; }
-  .dono .opcoes { margin-top: 8px; max-width: 100%; }
-  .dono .opcao-btn { background: var(--dono-card); color: #fff; border-color: #4A4E57; }
-  .dono .opcao-btn:hover, .dono .opcao-btn:focus-visible { background: var(--accent); border-color: var(--accent); color: #2B1700; }
-
-  .barra { display: flex; align-items: center; gap: 8px; margin: 3px 0; }
-  .barra span:first-child { width: 120px; flex-shrink: 0; font-size: 12.5px; }
-  .barra .cheio { height: 8px; border-radius: 4px; background: var(--accent); }
-  .barra span:last-child { font-size: 12px; color: #B8BBC2; }
-
-  .digitando {
-    align-self: flex-start; display: flex; gap: 4px; padding: 12px 15px;
-    background: var(--paper); border-radius: var(--radius); border-bottom-left-radius: 5px;
-  }
-  .digitando span { width: 6px; height: 6px; border-radius: 50%; background: #B9B0A0; animation: pulsa 1.1s infinite ease-in-out; }
-  .digitando span:nth-child(2) { animation-delay: 0.15s; }
-  .digitando span:nth-child(3) { animation-delay: 0.3s; }
-  @keyframes pulsa { 0%, 60%, 100% { transform: translateY(0); opacity: 0.5; } 30% { transform: translateY(-4px); opacity: 1; } }
-
-  .opcoes {
-    display: flex; flex-direction: column; gap: 7px;
-    align-self: flex-start; max-width: 90%;
-    opacity: 0; animation: entra 0.32s ease forwards;
-  }
-  .opcao-btn {
-    background: var(--card);
-    border: 1.5px solid var(--paper-dim);
-    color: var(--text-dark);
-    font-family: inherit; font-size: 13.5px; font-weight: 700;
-    padding: 10px 14px; border-radius: 12px;
-    text-align: left; cursor: pointer; transition: all 0.15s;
-  }
-  .opcao-btn:hover, .opcao-btn:focus-visible { background: var(--ink); color: #fff; border-color: var(--ink); outline: none; }
-
-  .rodape { padding: 12px 14px; background: var(--paper); border-top: 1px solid var(--paper-dim); min-height: 20px; }
-
-  .campo-linha { display: flex; gap: 8px; opacity: 0; animation: entra 0.3s ease forwards; }
-  .campo-linha input {
-    flex: 1; min-width: 0; padding: 11px 14px; border-radius: 20px;
-    border: 1.5px solid var(--paper-dim); font-family: inherit; font-size: 14px;
-    outline: none; background: var(--card); color: var(--text-dark);
-  }
-  .campo-linha input:focus { border-color: var(--ink-light); }
-  .campo-linha button {
-    width: 42px; height: 42px; border-radius: 50%; border: none;
-    background: var(--ink); color: #fff; font-size: 16px; cursor: pointer; flex-shrink: 0;
-  }
-
-  .cta-final {
-    display: block; width: 100%; padding: 13px; border-radius: 14px; border: none;
-    background: var(--accent); color: #2B1700; font-family: inherit; font-weight: 900;
-    font-size: 15px; cursor: pointer;
-    text-align: center; text-decoration: none;
-  }
-  .cta-final:hover { background: var(--accent-dark); color: #fff; }
-  .aviso-demo { text-align: center; font-size: 11.5px; color: var(--text-soft); padding-top: 8px; }
-
-  .legenda { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 14px; font-size: 12px; color: var(--text-soft); }
-  .legenda i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 4px; }
-
-  @media (prefers-reduced-motion: reduce) {
-    .bolha, .opcoes, .campo-linha, .dono { animation: none; opacity: 1; transform: none; }
-    .digitando span { animation: none; opacity: 1; }
-    .corpo { scroll-behavior: auto; }
-  }
+@media (max-width: 900px) {
+  .hero .wrap { grid-template-columns: 1fr; gap: 48px; }
+  .grupos { grid-template-columns: repeat(2, 1fr); }
+  .trabalhos { grid-template-columns: 1fr; }
+  .trabalho.grande { grid-row: auto; }
+  .passos { grid-template-columns: 1fr; gap: 28px; }
+  .passos::before { display: none; }
+}
+@media (max-width: 640px) {
+  body { font-size: 16px; }
+  .wrap { padding: 0 16px; }
+  .topo nav { display: none; }
+  .hero { padding: 16px 0 70px; }
+  section { padding: 72px 0; }
+  .demo { grid-template-columns: 1fr; gap: 14px; padding: 22px 20px 22px 24px; }
+  .demo .ico { width: 56px; height: 56px; font-size: 28px; border-radius: 16px; }
+  .demo .abrir { justify-self: start; }
+  .grupos { grid-template-columns: 1fr; gap: 30px; }
+  .btn { width: 100%; justify-content: center; }
+  .celular { width: min(290px, 100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+  html { scroll-behavior: auto; }
+}
 </style>
 </head>
 <body>
 
 <header class="topo">
-  <h1>Atendente de WhatsApp para pet shop</h1>
-  <p>Faça de conta que você é cliente de uma loja. Você também vê o que chega no celular do dono.</p>
+  <div class="wrap">
+    <a class="marca" href="#"><i aria-hidden="true"></i>Forwes</a>
+    <nav aria-label="Seções">
+      <a href="#demos">Demos</a>
+      <a href="#servicos">Serviços</a>
+      <a href="#trabalhos">Trabalhos</a>
+      <a href="#contato">Contato</a>
+    </nav>
+  </div>
 </header>
 
-<div class="telefone">
-  <div class="tela">
-    <div class="cabecalho">
-      <div class="avatar" aria-hidden="true">🐾</div>
-      <div>
-        <div class="nome" id="nomeLoja"></div>
-        <div class="status"><span class="ponto"></span> online agora</div>
+<main>
+<div class="hero">
+  <div class="fundo" aria-hidden="true"></div>
+  <div class="wrap">
+    <div>
+      <h1>Seu negócio atende, vende e lembra o cliente sozinho.<span class="tarde">Até quando a porta já fechou.</span></h1>
+      <p class="sub">A Forwes coloca inteligência artificial para trabalhar no WhatsApp, no telefone e na rotina do seu negócio. Você testa aqui mesmo, antes de decidir.</p>
+      <div class="botoes">
+        <a class="btn cheio" href="#demos">Testar uma demo</a>
+        <a class="btn vazio zap" href="#" target="_blank" rel="noopener">Falar no WhatsApp</a>
       </div>
     </div>
-    <div class="corpo" id="corpo" aria-live="polite"></div>
-    <div class="rodape" id="rodape"></div>
+    <div>
+      <div class="celular" aria-hidden="true">
+        <div class="tela">
+          <div class="barra"><span class="hora" id="hora">23:47</span><span>●●● 4G</span></div>
+          <div class="contato"><div class="av" id="av">🐾</div><div><b id="nomeContato">Pet shop</b><small>online agora</small></div></div>
+          <div class="conversa" id="conversa"></div>
+        </div>
+      </div>
+      <div class="cenas" role="group" aria-label="Escolher exemplo de conversa" id="cenas"></div>
+      <p class="legenda" id="legenda" aria-live="polite"></p>
+    </div>
   </div>
 </div>
 
-<div class="legenda" aria-hidden="true">
-  <span><i style="background:#FFFBF3;border:1px solid #D8CDB4"></i>atendente</span>
-  <span><i style="background:#24262B"></i>celular do dono</span>
-  <span><i style="border:1.5px dashed #C8BC9E"></i>o que acontece por trás</span>
-</div>
+<section id="demos">
+  <div class="wrap">
+    <h2>Teste agora, como se fosse o seu cliente</h2>
+    <p class="intro">Cada demo simula um negócio de verdade. Abra no celular, converse, toque nas respostas e veja o que o dono recebe do outro lado.</p>
+    <div class="demos">
+      <a class="demo pet" href="petshop.html">
+        <div class="ico" aria-hidden="true">🐾</div>
+        <div>
+          <h3>Atendente de pet shop no WhatsApp</h3>
+          <p>Lembra o cliente quando a ração está acabando, monta o pedido, calcula a entrega e manda o Pix.</p>
+          <ul><li>Recompra de ração</li><li>Pedido com Pix</li><li>Taxa por bairro</li></ul>
+        </div>
+        <span class="abrir">Abrir a demo</span>
+      </a>
+      <a class="demo lanche" href="lanchonete.html">
+        <div class="ico" aria-hidden="true">🍔</div>
+        <div>
+          <h3>Clientes de volta para a lanchonete</h3>
+          <p>Descobre quem parou de pedir, chama de volta com um cupom e mostra ao dono quanto isso trouxe de venda.</p>
+          <ul><li>Cliente sumido</li><li>Cupom automático</li><li>Relatório para o dono</li></ul>
+        </div>
+        <span class="abrir">Abrir a demo</span>
+      </a>
+      <a class="demo clinica" href="clinica-voz.html">
+        <div class="ico" aria-hidden="true">📞</div>
+        <div>
+          <h3>Assistente de voz para clínica</h3>
+          <p>Atende a ligação falando, marca, remarca e cancela consulta, tira dúvidas e reconhece uma emergência.</p>
+          <ul><li>Fala e ouve</li><li>Agenda na hora</li><li>Confirmação no WhatsApp</li></ul>
+        </div>
+        <span class="abrir">Abrir a demo</span>
+      </a>
+    </div>
+    <p class="aviso-demo">Nas demos, nomes, preços e horários são de exemplo. Nada do que você digita é guardado.</p>
+  </div>
+</section>
+
+<section id="servicos">
+  <div class="wrap">
+    <h2>O que a Forwes faz pelo seu negócio</h2>
+    <p class="intro">Tudo é montado com as informações do seu negócio: seus preços, seus horários, seu jeito de falar com o cliente.</p>
+    <div class="grupos">
+      <div class="grupo">
+        <h3>Atender</h3>
+        <ul>
+          <li><b>Atendente no WhatsApp</b><span>Responde, agenda e vende 24 horas.</span></li>
+          <li><b>Assistente de voz</b><span>Atende o telefone sem deixar ninguém esperando.</span></li>
+          <li><b>Confirmação e lembrete</b><span>Menos falta e menos horário vazio.</span></li>
+        </ul>
+      </div>
+      <div class="grupo">
+        <h3>Vender de novo</h3>
+        <ul>
+          <li><b>Cliente de volta</b><span>Chama quem sumiu antes que vá para o concorrente.</span></li>
+          <li><b>Recompra no tempo certo</b><span>Avisa quando o produto do cliente está acabando.</span></li>
+        </ul>
+      </div>
+      <div class="grupo">
+        <h3>Organizar</h3>
+        <ul>
+          <li><b>Automação de tarefas</b><span>Planilha, e-mail e sistemas conversando sozinhos.</span></li>
+          <li><b>Aplicativos sob medida</b><span>Inclusive programa instalado no computador da empresa.</span></li>
+          <li><b>Time de agentes de IA</b><span>Consultoria para montar o seu.</span></li>
+        </ul>
+      </div>
+      <div class="grupo">
+        <h3>Aparecer</h3>
+        <ul>
+          <li><b>Site</b><span>Rápido, feito para celular, com botão de WhatsApp.</span></li>
+          <li><b>Vídeos animados</b><span>Para explicar o seu serviço nas redes.</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="trabalhos">
+  <div class="wrap">
+    <h2>Já funcionando em negócios de verdade</h2>
+    <p class="intro">Projetos reais, contados sem expor os clientes.</p>
+    <div class="trabalhos">
+      <article class="trabalho grande">
+        <span class="estado">Entregue</span>
+        <h3>Controle de gastos para uma transportadora</h3>
+        <p>Programa instalado no computador da empresa, feito sob medida para o jeito que ela já trabalhava.</p>
+        <ul>
+          <li>Lê o extrato do banco em PDF e separa por categoria</li>
+          <li>Painel do mês com gráfico por categoria</li>
+          <li>Contas a vencer e relatório em Excel e PDF</li>
+        </ul>
+        <div class="painel" id="painel" aria-hidden="true">
+          <div class="barras">
+            <i style="--h:62%"></i><i style="--h:88%"></i><i style="--h:45%"></i><i style="--h:70%"></i><i style="--h:30%"></i><i style="--h:54%"></i>
+          </div>
+          <small>Gastos por categoria no mês (ilustração)</small>
+        </div>
+      </article>
+      <article class="trabalho">
+        <span class="estado andamento">Em implantação</span>
+        <h3>Atendente de recompra para um pet shop em Vitória</h3>
+        <p>O WhatsApp da loja lembra cada cliente quando a ração dele está acabando e já fecha o pedido com entrega.</p>
+      </article>
+      <article class="trabalho">
+        <span class="estado">Funcionando</span>
+        <h3>Atendente da própria Forwes</h3>
+        <p>O WhatsApp da Forwes é atendido por um agente de IA. Mande uma mensagem e converse com ele.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="como">
+  <div class="wrap">
+    <h2>Como começa</h2>
+    <ol class="passos">
+      <li><h3>Conversa rápida</h3><p>Você conta onde perde tempo ou cliente. Uns 15 minutos, pelo WhatsApp.</p></li>
+      <li><h3>Demo com os seus dados</h3><p>Você vê funcionando com os seus produtos e preços antes de pagar.</p></li>
+      <li><h3>Implantação</h3><p>A gente instala, acompanha as primeiras semanas e ajusta o que precisar.</p></li>
+    </ol>
+  </div>
+</section>
+
+<section class="final" id="contato">
+  <div class="wrap">
+    <h2>Quer ver isso no seu negócio?</h2>
+    <p>Diga o tipo do seu negócio e o que mais toma o seu tempo. A resposta vem pelo WhatsApp.</p>
+    <div class="botoes"><a class="btn cheio zap" href="#" target="_blank" rel="noopener">Falar com a Forwes no WhatsApp</a></div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap"><span>Forwes, automação e IA para pequenos negócios</span><span>Vitória, Espírito Santo</span></div>
+</footer>
 
 <script>
-/* ============================================================
-   CONFIGURACAO — dados ficticios da demo
-   ============================================================ */
-const CONFIG = {
-  nomeLoja: 'Pet Shop Exemplo',
-  whatsappForwes: '5527981218574',
-  pedidoMinimoEntrega: 50,
-  produtos: [
-    { nome: 'Ração Exemplo Cães Adulto 15kg', preco: 189.90, estoque: 12, racao: true },
-    { nome: 'Ração Exemplo Gatos 10kg',       preco: 172.90, estoque: 7,  racao: true },
-    { nome: 'Areia higiênica 4kg',            preco: 18.90,  estoque: 30 },
-    { nome: 'Petisco para cães 500g',         preco: 22.90,  estoque: 20 },
-  ],
-  bairros: [
-    { nome: 'Centro',        taxa: 5 },
-    { nome: 'Jardim Bela Vista', taxa: 8 },
-  ],
-};
+const WHATSAPP = '5527981218574';
+const textoZap = 'Olá! Vi o portfólio da Forwes e quero saber mais.';
+document.querySelectorAll('.zap').forEach(a => { a.href = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(textoZap)}`; });
 
-const reais = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-const espera = ms => new Promise(r => setTimeout(r, ms));
+/* Celular do topo: três conversas que acontecem com a loja fechada */
+const CENAS = [
+  { nome: 'Pet shop', av: '🐾', cor: 'var(--pet)', hora: '23:47', legenda: 'Pet shop, quase meia-noite',
+    msgs: [
+      ['cli', 'Oi, vocês ainda têm a ração Golden 15 kg?'],
+      ['bot', 'Temos sim! R$ 189,90. Entrego em Bonfim amanhã cedo, taxa de R$ 5. Quer que eu separe?'],
+      ['cli', 'Quero!'],
+      ['bot', 'Pronto, pedido feito. Segue o Pix 👇'],
+      ['sis', 'Pedido enviado ao dono'],
+    ] },
+  { nome: 'Clínica', av: '🩺', cor: 'var(--clinica)', hora: '06:12', legenda: 'Clínica, antes de abrir',
+    msgs: [
+      ['cli', 'Preciso remarcar minha consulta de quinta'],
+      ['bot', 'Claro! Tenho sexta às 10h ou segunda às 14h30. Qual fica melhor?'],
+      ['cli', 'Sexta às 10h'],
+      ['bot', 'Feito! Consulta remarcada para sexta às 10h.'],
+      ['sis', 'Agenda atualizada'],
+    ] },
+  { nome: 'Lanchonete', av: '🍔', cor: 'var(--lanche)', hora: '18:30', legenda: 'Lanchonete, cliente sumido há 20 dias',
+    msgs: [
+      ['bot', 'Oi, Marcos! Faz tempo que você não pede. Hoje o seu X-tudo sai com 15% de desconto 🍔'],
+      ['cli', 'Opa, manda um então!'],
+      ['bot', 'Saindo! Chega em uns 40 minutos.'],
+      ['sis', 'Cliente voltou: + R$ 32,90'],
+    ] },
+];
+const reduzido = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const conversa = document.getElementById('conversa');
+const cenasEl = document.getElementById('cenas');
+let cenaAtual = 0, geracao = 0;
+const pausa = ms => new Promise(r => setTimeout(r, reduzido ? 0 : ms));
 
-document.getElementById('nomeLoja').textContent = CONFIG.nomeLoja;
+CENAS.forEach((c, i) => {
+  const b = document.createElement('button');
+  b.setAttribute('aria-label', `Ver conversa: ${c.legenda}`);
+  b.onclick = () => roda(i);
+  cenasEl.appendChild(b);
+});
 
-const corpo = document.getElementById('corpo');
-const rodape = document.getElementById('rodape');
-const lead = { nome: '', pet: '', especie: 'cão', telefone: '', loja: '' };
-let numeroPedido = 101;
-let enderecoGuardado = '';
-let taxaGuardada = CONFIG.bairros[0].taxa;
-
-function scrollFim() { corpo.scrollTop = corpo.scrollHeight; }
-
-function add(el) { corpo.appendChild(el); scrollFim(); return el; }
-
-function div(classe, texto) {
+function bolha(tipo, texto) {
   const d = document.createElement('div');
-  d.className = classe;
-  if (texto !== undefined) d.textContent = texto;
+  d.className = 'msg ' + tipo;
+  if (texto) d.textContent = texto;
+  conversa.appendChild(d);
+  requestAnimationFrame(() => requestAnimationFrame(() => d.classList.add('on')));
   return d;
 }
 
-async function digitando(ms) {
-  const d = add(div('digitando'));
-  d.innerHTML = '<span></span><span></span><span></span>';
-  await espera(ms);
-  d.remove();
-}
-
-async function bot(texto) {
-  await digitando(600 + Math.random() * 350);
-  add(div('bolha bot', texto));
-}
-
-function user(texto) { add(div('bolha user', texto)); }
-
-async function bastidor(texto) {
-  await espera(350);
-  add(div('bolha bastidor', '🔍 ' + texto));
-  await espera(250);
-}
-
-async function cena(texto) {
-  await espera(400);
-  add(div('bolha cena', texto));
-  await espera(500);
-}
-
-async function resumo(titulo, linhas, total) {
-  await digitando(700);
-  const b = div('bolha resumo');
-  const t = document.createElement('span');
-  t.className = 'resumo-titulo';
-  t.textContent = titulo;
-  b.appendChild(t);
-  linhas.forEach(l => { const s = document.createElement('span'); s.style.display = 'block'; s.textContent = l; b.appendChild(s); });
-  if (total) { const s = document.createElement('span'); s.style.display = 'block'; s.className = 'linha-total'; s.textContent = total; b.appendChild(s); }
-  add(b);
-}
-
-/* Bloco do celular do dono: mensagens + botoes opcionais (o visitante responde como dono) */
-async function dono(mensagens, botoes) {
-  await espera(500);
-  const card = div('dono');
-  const rot = document.createElement('span');
-  rot.className = 'dono-rotulo';
-  rot.textContent = '📲 No celular do dono';
-  card.appendChild(rot);
-  mensagens.forEach(m => card.appendChild(typeof m === 'string' ? div('dono-msg', m) : m));
-  add(card);
-  if (!botoes) return null;
-  const escolha = await escolhe(botoes, card);
-  card.appendChild(div('dono-msg resposta', escolha));
-  scrollFim();
-  return escolha;
-}
-
-function escolhe(opcoes, dentro) {
-  return new Promise(resolve => {
-    const wrap = div('opcoes');
-    opcoes.forEach(op => {
-      const btn = document.createElement('button');
-      btn.className = 'opcao-btn';
-      btn.textContent = op;
-      btn.onclick = () => {
-        wrap.remove();
-        if (!dentro) user(op);
-        resolve(op);
-      };
-      wrap.appendChild(btn);
-    });
-    (dentro || corpo).appendChild(wrap);
-    scrollFim();
-    wrap.querySelector('button').focus({ preventScroll: true });
-  });
-}
-
-function digita(placeholder) {
-  return new Promise(resolve => {
-    rodape.innerHTML = '';
-    const linha = div('campo-linha');
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.placeholder = placeholder;
-    input.setAttribute('aria-label', placeholder);
-    input.autocomplete = 'off';
-    const btn = document.createElement('button');
-    btn.textContent = '➤';
-    btn.setAttribute('aria-label', 'Enviar');
-    function enviar() {
-      const valor = input.value.trim();
-      if (!valor) { input.focus(); return; }
-      linha.remove();
-      user(valor);
-      resolve(valor);
-    }
-    btn.onclick = enviar;
-    input.onkeydown = e => { if (e.key === 'Enter') enviar(); };
-    linha.append(input, btn);
-    rodape.appendChild(linha);
-    input.focus();
-  });
-}
-
-function primeiroNome(bruto) {
-  const p = bruto.trim().split(/\s+/)[0].replace(/[^\p{L}'-]/gu, '').slice(0, 20) || 'Amigo';
-  return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
-}
-
-/* ============================================================
-   ROTEIROS — cada um mostra uma coisa que o agente real faz
-   ============================================================ */
-
-async function roteiroPreco() {
-  await bot(`Claro, ${lead.nome}! Qual produto você quer saber?`);
-  const opcoes = CONFIG.produtos.map(p => p.nome).concat(['Uma marca que a loja não vende']);
-  const escolha = await escolhe(opcoes);
-  const p = CONFIG.produtos.find(x => x.nome === escolha);
-  if (p) {
-    await bot(`Temos sim! ${p.nome} sai por ${reais(p.preco)}. Quer que eu já separe pra você?`);
-    await bastidor('preço e estoque vêm da planilha da loja. O dono muda um preço lá e o atendente já responde com o valor novo. A IA nunca inventa preço.');
-  } else {
-    await bot('Essa eu preciso confirmar com a equipe, tá? Já passei pra eles e te respondem por aqui mesmo. 😊');
-    await dono([`🙋 ${lead.nome} perguntou por um produto que não está na planilha. Responda direto no WhatsApp da loja.`]);
-    await bastidor('quando o produto não está cadastrado, o atendente não diz "tem" nem "não tem": passa para uma pessoa.');
-  }
-}
-
-async function roteiroPedido() {
-  await bot(`Bora, ${lead.nome}! O que vai ser hoje?`);
-  const nome = await escolhe(CONFIG.produtos.map(p => `${p.nome} — ${reais(p.preco)}`));
-  const p = CONFIG.produtos.find(x => nome.startsWith(x.nome));
-  await bot('Quantas unidades?');
-  const qtd = Number((await escolhe(['1', '2', '3'])));
-  let subtotal = p.preco * qtd;
-
-  await bot('Vai ser entrega ou retirada na loja?');
-  let modo = await escolhe(['🚚 Entrega', '🏪 Retirada na loja']);
-  let taxa = 0;
-  let destino = 'Retirada na loja';
-
-  if (modo === '🚚 Entrega' && subtotal < CONFIG.pedidoMinimoEntrega) {
-    await bot(`Pra entrega, o pedido mínimo é ${reais(CONFIG.pedidoMinimoEntrega)}. Seu pedido deu ${reais(subtotal)}. Prefere retirar na loja?`);
-    await escolhe(['Tudo bem, retiro na loja']);
-    modo = '🏪 Retirada na loja';
-  }
-
-  if (modo === '🚚 Entrega') {
-    await bot('Qual o seu bairro?');
-    const bairro = await escolhe(CONFIG.bairros.map(b => `${b.nome} (taxa ${reais(b.taxa)})`).concat(['Outro bairro']));
-    const b = CONFIG.bairros.find(x => bairro.startsWith(x.nome));
-    if (!b) {
-      await bot('Esse bairro ainda não está na nossa área de entrega. Vou deixar como retirada na loja e a equipe te chama se der pra combinar outro jeito, ok?');
-      await bastidor('a lista de bairros e taxas fica na planilha. O dono acrescenta um bairro e ele já passa a valer.');
+async function roda(i) {
+  const minha = ++geracao;
+  cenaAtual = i;
+  const c = CENAS[i];
+  conversa.innerHTML = '';
+  document.getElementById('hora').textContent = c.hora;
+  document.getElementById('nomeContato').textContent = c.nome;
+  const av = document.getElementById('av');
+  av.textContent = c.av; av.style.background = `color-mix(in srgb, ${c.cor} 30%, transparent)`;
+  document.getElementById('legenda').textContent = c.legenda;
+  [...cenasEl.children].forEach((b, j) => b.setAttribute('aria-current', j === i));
+  for (const [tipo, texto] of c.msgs) {
+    if (minha !== geracao) return;
+    if (tipo === 'bot') {
+      await pausa(500);
+      const d = bolha('bot digitando'); d.innerHTML = '<span></span><span></span><span></span>';
+      await pausa(1100);
+      if (minha !== geracao) return;
+      d.remove();
     } else {
-      taxa = b.taxa;
-      await bot('Me passa rua e número?');
-      const rua = await digita('Ex: Rua das Flores, 120');
-      destino = `${rua} — ${b.nome}`;
-      enderecoGuardado = destino;
-      taxaGuardada = taxa;
+      await pausa(tipo === 'sis' ? 600 : conversa.children.length ? 900 : 250);
     }
+    if (minha !== geracao) return;
+    bolha(tipo, texto);
   }
-
-  const total = subtotal + taxa;
-  const linhas = [
-    `🙍 ${lead.nome}`,
-    `📦 ${qtd}x ${p.nome} — ${reais(subtotal)}`,
-  ];
-  if (taxa) linhas.push(`🚚 Taxa de entrega — ${reais(taxa)}`);
-  linhas.push(taxa ? `📍 ${destino}` : '🏪 Retirada na loja');
-  await resumo(`🛒 Seu pedido #${numeroPedido}`, linhas, `Total: ${reais(total)}`);
-  await bot('Posso confirmar?');
-  const ok = await escolhe(['✅ Pode confirmar', '✏️ Quero mudar']);
-  if (ok !== '✅ Pode confirmar') {
-    await bot('Sem problema! É só me dizer o que muda que eu refaço o resumo.');
-    await bastidor('o cliente sempre vê o resumo com o total antes de qualquer coisa chegar no dono.');
-    return;
-  }
-  await bastidor('a conta é feita pelo sistema, não pela IA: preço da planilha + taxa do bairro.');
-  await bot('Perfeito! Só um instante que eu confirmo o estoque com a loja. ⏳');
-
-  const pedido = numeroPedido++;
-  const resp = await dono(
-    [`🛒 Pedido #${pedido} — ${lead.nome}\n${qtd}x ${p.nome}\n${taxa ? 'Entrega: ' + destino : 'Retirada na loja'}\nTotal ${reais(total)}\n\nTem em estoque? Responda sim ou não.`],
-    ['sim', 'não']
-  );
-
-  if (resp === 'não') {
-    await bot(`${lead.nome}, infelizmente esse acabou agora. 😕 A equipe já está vendo uma opção parecida pra você.`);
-    await bastidor('se o dono responde "não", o cliente é avisado na hora e ninguém fica esperando.');
-    return;
-  }
-
-  await bot(`Tem sim! 🎉 Pra finalizar, é só fazer o Pix de ${reais(total)}:\n\nChave: pix@petshopexemplo.com.br\nNome: Pet Shop Exemplo\n\nMe avisa quando pagar.`);
-  await escolhe(['💸 Já paguei']);
-  await bot('Obrigado! Assim que a loja conferir, te aviso. 🙏');
-
-  await dono([`💰 ${lead.nome} disse que pagou o pedido #${pedido} (${reais(total)}).\nConfira no banco e responda PAGO.`], ['PAGO']);
-  await bot(taxa
-    ? `Pagamento confirmado! ✅ Seu pedido #${pedido} já vai sair pra entrega.`
-    : `Pagamento confirmado! ✅ Seu pedido #${pedido} já está separado esperando você na loja.`);
-  await bastidor(`o estoque baixou sozinho na planilha (${p.estoque} → ${p.estoque - qtd}) e a venda entrou no relatório do mês.${taxa ? ' O endereço ficou guardado para a próxima compra.' : ''}`);
-  if (p.racao) await bastidor(`como foi ração, o sistema anotou a data. Perto de acabar, o atendente chama ${lead.nome} sozinho (veja "Lembrete antes da ração acabar").`);
+  await pausa(3800);
+  if (minha === geracao && !reduzido) roda((i + 1) % CENAS.length);
 }
+roda(0);
 
-async function roteiroRecompra() {
-  await cena('⏩ 25 dias depois...');
-  await bastidor(`ninguém da loja fez nada: o sistema calculou que a ração do ${lead.pet} está perto de acabar.`);
-  const racao = CONFIG.produtos.find(p => p.racao && (lead.especie === 'gato' ? p.nome.includes('Gatos') : p.nome.includes('Cães')));
-  const end = enderecoGuardado || 'Rua das Flores, 120 — Centro';
-  await bot(`Oi, ${lead.nome}! 🐾 A ração do ${lead.pet} deve acabar em uns 5 dias.\nMando a de sempre?\n\n${racao.nome} — ${reais(racao.preco)}\nEntrega em: ${end}`);
-  const r = await escolhe(['Sim, manda!', 'Mudou o endereço', 'Ainda tenho, obrigado']);
-  if (r === 'Ainda tenho, obrigado') {
-    await bot('Combinado! Te chamo de novo mais pra frente. 😊');
-    await bastidor('o sistema aprende quanto o saco realmente dura para aquele pet e acerta a data do próximo aviso.');
-    return;
-  }
-  if (r === 'Mudou o endereço') {
-    await bot('Me passa o endereço novo?');
-    const novo = await digita('Rua, número e bairro');
-    enderecoGuardado = novo;
-  }
-  const taxa = taxaGuardada;
-  await resumo(`🛒 Pedido #${numeroPedido}`, [
-    `🙍 ${lead.nome} (${lead.pet})`,
-    `📦 1x ${racao.nome} — ${reais(racao.preco)}`,
-    `🚚 Taxa de entrega — ${reais(taxa)}`,
-    `📍 ${enderecoGuardado || end}`,
-  ], `Total: ${reais(racao.preco + taxa)}`);
-  await dono([`🔁 Recompra pelo lembrete — pedido #${numeroPedido++}\n${lead.nome}: 1x ${racao.nome}\nTem em estoque? Responda sim ou não.`]);
-  await bastidor('daqui segue igual a um pedido normal: dono confirma o estoque, cliente paga no Pix, estoque baixa. É venda que a loja perderia para o concorrente ou para o mercado.');
-}
-
-async function roteiroPessoa() {
-  await bot(`Pode falar, ${lead.nome}. Em que posso ajudar?`);
-  const r = await escolhe([
-    '💸 Consegue um desconto?',
-    '😠 Meu pedido atrasou',
-    `🤒 O ${lead.pet} está vomitando, o que eu dou?`,
-  ]);
-  if (r.startsWith('🤒')) {
-    await bot(`Poxa, sinto muito pelo ${lead.pet}. 💚 Sobre saúde eu não posso orientar: o certo é procurar um veterinário o quanto antes. Quer que alguém da loja te passe um contato?`);
-    await bastidor('o atendente nunca dá orientação veterinária nem de remédio.');
-  } else {
-    await bot('Entendi! Vou chamar alguém da equipe pra falar com você agora mesmo. 🙋');
-    await dono([`🙋 ${lead.nome} pediu para falar com uma pessoa:\n"${r.slice(2).trim()}"\nResponda direto no WhatsApp da loja.`]);
-    await bastidor('reclamação, desconto e pedido de falar com gente vão direto para uma pessoa. Preço e desconto quem decide é o dono, nunca a IA.');
-  }
-  await bastidor('quando um funcionário responde pelo mesmo WhatsApp da loja, o atendente fica quieto por 2 horas naquela conversa para não atropelar. Dá para religar antes com um comando.');
-}
-
-async function roteiroRelatorio() {
-  await cena('⏩ Dia 1º do mês...');
-  const rel = div('dono-msg');
-  const titulo = document.createElement('div');
-  titulo.innerHTML = '<b>📊 Relatório de setembro — Pet Shop Exemplo</b>';
-  rel.appendChild(titulo);
-  [
-    'Vendas pelo WhatsApp: R$ 8.430,00',
-    'Pedidos: 47 (12 vieram do lembrete de ração)',
-    'Clientes que voltaram a comprar: 31',
-  ].forEach(t => rel.appendChild(div('', t)));
-  const mais = div('', 'Mais vendidos:');
-  mais.style.marginTop = '6px';
-  rel.appendChild(mais);
-  [['Ração Cães Adulto', 100, 18], ['Ração Gatos', 72, 13], ['Areia higiênica', 50, 9], ['Petisco cães', 28, 5]].forEach(([n, w, q]) => {
-    const b = div('barra');
-    const a = document.createElement('span'); a.textContent = n;
-    const c = document.createElement('span'); c.className = 'cheio'; c.style.width = w + 'px';
-    const d = document.createElement('span'); d.textContent = q;
-    b.append(a, c, d);
-    rel.appendChild(b);
-  });
-  await dono([rel, '🔗 Ver o painel completo']);
-  await bastidor('chega todo dia 1º por WhatsApp e por e-mail, com um painel que abre no celular. São números que a loja não tinha: quanto vendeu pelo WhatsApp e o que mais sai. Valores desta tela são de exemplo.');
-}
-
-async function roteiroProblema() {
-  await cena('⚠️ E se algo der errado?');
-  await dono(['⚠️ O atendente não conseguiu ler a planilha às 14:32.\nAté normalizar, responda os clientes direto no WhatsApp da loja.']);
-  await bastidor('se a IA ou a planilha falhar, o dono é avisado na hora (no máximo 1 aviso a cada 30 minutos). Nenhum cliente fica sem resposta sem a loja saber.');
-}
-
-const MENUS = [
-  { rotulo: '🔎 Perguntar preço e estoque',        roteiro: roteiroPreco },
-  { rotulo: '🛒 Fazer um pedido (do início ao Pix)', roteiro: roteiroPedido },
-  { rotulo: '🔁 Lembrete antes da ração acabar',   roteiro: roteiroRecompra },
-  { rotulo: '🙋 Pedir desconto, reclamar, saúde do pet', roteiro: roteiroPessoa },
-  { rotulo: '📊 Relatório do mês para o dono',     roteiro: roteiroRelatorio },
-  { rotulo: '⚠️ Quando algo dá errado',            roteiro: roteiroProblema },
-];
-const ROTULO_SAIR = '✅ Já vi o suficiente';
-const visitados = new Set();
-
-async function mostraMenu() {
-  while (true) {
-    const restantes = MENUS.filter(m => !visitados.has(m.rotulo));
-    if (restantes.length === 0) break;
-    const opcoes = restantes.map(m => m.rotulo);
-    if (visitados.size > 0) opcoes.push(ROTULO_SAIR);
-    const escolha = await escolhe(opcoes);
-    if (escolha === ROTULO_SAIR) break;
-    const menu = MENUS.find(m => m.rotulo === escolha);
-    visitados.add(menu.rotulo);
-    await menu.roteiro();
-    if (visitados.size < MENUS.length) await bot(`Quer ver mais alguma coisa, ${lead.nome}?`);
-  }
-  await encerra();
-}
-
-async function encerra() {
-  await cena('Fim da demonstração');
-  await bot(`Isso foi uma prévia, ${lead.nome}. Na sua loja, o atendente responde 24h com os seus produtos, os seus preços e o seu Pix, e chama o cliente antes da ração acabar.`);
-  await bot('Quer ver isso rodando no seu pet shop? Qual o nome da sua loja?');
-  lead.loja = await digita('Nome do seu pet shop');
-  await bot('E o melhor WhatsApp pra gente conversar?');
-  let tel = await digita('Seu WhatsApp com DDD');
-  while (tel.replace(/\D/g, '').length < 10) {
-    await bot('Não consegui ler o número. Confere se está com DDD?');
-    tel = await digita('Ex: 27 99999-9999');
-  }
-  lead.telefone = tel;
-  await bot(`Perfeito! Toca no botão abaixo e me manda a mensagem que eu te mostro como fica na ${lead.loja}. 😊`);
-
-  rodape.innerHTML = '';
-  const btn = document.createElement('a');
-  btn.className = 'cta-final';
-  btn.textContent = '💬 Quero na minha loja';
-  const msg = `Olá! Testei a demo do atendente para pet shop e quero saber mais.\nNome: ${lead.nome}\nLoja: ${lead.loja}\nWhatsApp: ${lead.telefone}`;
-  btn.href = `https://wa.me/${CONFIG.whatsappForwes}?text=${encodeURIComponent(msg)}`;
-  btn.target = '_blank';
-  btn.rel = 'noopener';
-  const aviso = div('aviso-demo', 'Demonstração Forwes — loja, preços e números são fictícios. Nenhum dado foi salvo.');
-  rodape.append(btn, aviso);
-}
-
-async function iniciar() {
-  await bot(`Oi! 🐾 Aqui é o atendente virtual do ${CONFIG.nomeLoja}.`);
-  await bot('Qual é o seu nome?');
-  lead.nome = primeiroNome(await digita('Seu nome'));
-  await bot(`Prazer, ${lead.nome}! Seu pet é cachorro ou gato?`);
-  lead.especie = (await escolhe(['🐶 Cachorro', '🐱 Gato'])).includes('Gato') ? 'gato' : 'cão';
-  await bot('E como ele se chama?');
-  lead.pet = primeiroNome(await digita('Nome do pet'));
-  await bot(`Que nome lindo! 💚 Escolhe o que você quer testar. Os cartões escuros mostram o que chega no celular do dono da loja.`);
-  rodape.innerHTML = '';
-  await mostraMenu();
-}
-
-iniciar();
+/* Barras do painel sobem quando aparecem na tela */
+const painel = document.getElementById('painel');
+if ('IntersectionObserver' in window) {
+  new IntersectionObserver((es, o) => { if (es[0].isIntersecting) { painel.classList.add('on'); o.disconnect(); } }, { threshold: .4 }).observe(painel);
+} else painel.classList.add('on');
 </script>
-
 </body>
 </html>
